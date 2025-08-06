@@ -9,6 +9,9 @@ import LoginForm from './Componentes/LoginForm';
 import AgregarUsuario from './Componentes/AgregarUsuario';
 import MatrizCD from './Componentes/MatrizCD';
 import NuevaPO from './Componentes/NuevaPO';
+import HistorialContenedor from './Componentes/materialReutilizable/historialContenedor';
+import Administrador_documentos from './Componentes/Ariel_componentes/Administrador_documentos';
+import Socs from './Componentes/ComponentesSOC/Socs';
 
 function App() {
   
@@ -18,7 +21,7 @@ function App() {
   const[error,setError] =useState("");
 
 const Login = async usuarioinfo =>{
-    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" ) {
+    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  ) {
       setUser({
         username:usuarioinfo.usuario,
         password:usuarioinfo.constrasena})
@@ -39,6 +42,7 @@ const Login = async usuarioinfo =>{
     }
   }
   }
+
 if(almacenlocalusuario === null){
   return (
     
@@ -76,12 +80,42 @@ if(almacenlocalusuario === null){
       <HeaderComponent />
       <div className='container'>
       <Routes>
+         <Route exact path='record/' element={<Inicio/>}></Route>
           <Route path='importaciones/controldocumental/matrizcd' element={<MatrizCD/>}></Route>    
           <Route path='importaciones/controldocumental/matrizcd/NuevaPO' element={<NuevaPO/>}></Route>    
+          <Route path='importaciones/controldocumental/matrizcd/historialCD' element={<HistorialContenedor/>}></Route>    
       </Routes>
       </div>
       </BrowserRouter>
     </div>
+    )
+  }if(localStorage.getItem('perfil') === "Documentos"){
+    return(
+      <div>
+      <BrowserRouter>
+      <HeaderComponent />
+      <div className='container'>
+      <Routes>
+           <Route  path='importaciones/AdmonDocs' element={<Administrador_documentos/>}></Route>   
+      </Routes>
+      </div>
+      </BrowserRouter>
+    </div>
+    )
+  } 
+  if(localStorage.getItem("perfil") === "SeguimientoOC1"){
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+
+          <Route  path='record/' element={<Socs/>}></Route>
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
     )
   }
   else{

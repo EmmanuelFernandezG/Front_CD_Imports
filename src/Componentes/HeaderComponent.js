@@ -36,6 +36,22 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
                     <Link  to="record" style={{color:"#FF6720" }} className='navbar-brand'>&nbsp; <strong>Inicio</strong> </Link>    
                     <Link  to="importaciones/controldocumental/matrizcd" style={{color:"#FF6720" }} className='navbar-brand'>&nbsp; <strong>Matriz CD</strong> </Link>    
                 </div>
+                                <span style={{marginLeft:"40%", fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>Usuario  : {localStorage.getItem("username") }</span>
+                <Link to='record'><button className='btn btn-danger'  onClick={limpiarstorage}> Log Out </button></Link>
+
+            </nav>
+        </header>
+    </div>
+  )
+}else if (localStorage.getItem('perfil') === 'Documentos'){
+ return (
+    <div style={{position:"sticky", top:0}}>
+        <header >
+            <nav  style={{border: "1px solid black"}}  className='navbar navbar-expand-mb navbar-light- bg-light'>
+                <div>
+                    <Link  to="importaciones/AdmonDocs" style={{color:"#FF6720" , marginLeft:"10%"}} className='navbar-brand'> <strong>Documentos</strong> </Link>    
+                </div>
+                                <span style={{marginLeft:"40%", fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>Usuario  : {localStorage.getItem("username") }</span>
                 <Link to='record'><button className='btn btn-danger'  onClick={limpiarstorage}> Log Out </button></Link>
 
             </nav>
@@ -51,6 +67,7 @@ if(localStorage.getItem('perfil') === 'ControlDocumental' ){
                 <div>
                     <Link  to="record" style={{color:"#FF6720" }} className='navbar-brand'>&nbsp; <strong>Inicio</strong> </Link>                    
                 </div>
+                                                <span style={{marginLeft:"40%", fontFamily: "'Comic Sans MS', cursive, sans-serif" }}>Usuario  : {localStorage.getItem("username") }</span>
                 <Link to='record'><button className='btn btn-danger'  onClick={limpiarstorage}> Log Out </button></Link>
 
             </nav>

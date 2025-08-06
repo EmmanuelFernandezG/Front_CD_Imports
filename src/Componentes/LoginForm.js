@@ -18,11 +18,10 @@ function LoginForm({Login, error}) {
             const max = response.data.length
            for (let i = 0; i < max; i++) {
             if (response.data[i].usuario === details.username && response.data[i].constrasena === details.password) {
-                 Login(response.data[i]);
+              Login(response.data[i]);
                 {break;}
-            }
-            if (i == max -1 ){
-              alert("usuario incorrecto ")            
+            }else if (i == max -1 ){
+              // alert("usuario incorrecto ")            
             }
           }
         }).catch(error => {
@@ -44,14 +43,12 @@ function LoginForm({Login, error}) {
       backgroundRepeat: "round",
       width:"100%",
       height:"80vh",
-      opacity:0.9,
+      // opacity:0.9,
     };
       
   return (
 <Stack style={{marginTop:"6%"}}>
-
 <Stack  style={myStyle}>
-    
 <br></br>
 <br></br>
     <Box style={{ opacity:0.8 , marginLeft:"32%",height:235,width:350,backgroundColor:'white'}} sx={{ borderRadius: '16px' }}>

@@ -2,7 +2,10 @@ import React, { Fragment, useState } from "react";
 import ClientesService from "../service/ClientesService";
 import Stack from "@mui/material/Stack";
 import { Input } from "@mui/material";
-import { BUs } from "./materialReutilizable/RangosReusables"
+import { BUs } from "./materialReutilizable/RangosReusables";
+import { generaHistorial } from "./materialReutilizable/GenerarHistorial.js";
+import { obtenerEstadoEnvio, BUs_Piloto } from "./materialReutilizable/AreaDestino.js";
+import { computeOffsetLeft } from "@mui/x-data-grid/hooks/features/virtualization/useGridVirtualScroller.js";
 
 function NuevaPO() {
   const [x, setx] = useState();
@@ -10,46 +13,153 @@ function NuevaPO() {
   const[view,setview]= useState(false);
   const[view2,setview2]= useState(false);
   const[registro, setRegistro] = useState([])
+  const[registrohist, setRegistrohist] = useState([])
+  const[registroanterior, setRegistroanterior] = useState([])
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
- 
-  const crearRegistro = ()=>{
-      ClientesService.createClientes(registro).then((response) =>{
-            setview(false)
-      }).catch((error)=>{
-            console.log(error)
-      })
+
+  const llenos = [registro.segunda, registro.precio, registro.matriz, registro.datos_fiscales, registro.term_de_pago, registro.dir_de_prov, registro.tax_id, registro.incoterm, registro.qty, registro.etd, registro.etd_pi, registro.add_elim_item, registro.peso_vol, 
+      registro.validacion_pod_vs_pi, registro.condicion_de_matrices, registro.compartida , registro.trial, registro.fecha_de_recepcion
+    ];
+  
+   const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
+
+  const crearRegistro = ()=>{ 
+      setRegistrohist(registro)
+       if(todosLlenos) {
+             if( registro.montopi === ''){
+              alert("Favor de llenar Monto")
+             }else{
+           const value = obtenerEstadoEnvio(null, registro); 
+           registro.area_destino = value;
+                  if (registro.fecha_matrices !== null && registro.fecha_matrices.includes("/")) {
+                   const [day, month, year] = registro.fecha_matrices.split('/');
+             registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
+            }    
+                  if(registro.id === undefined){
+                       ClientesService.createClientes(registro).then((response) =>{
+                             setview(false)
+                       }).catch((error)=>{
+                             console.log(error)
+                       })
+                      generaHistorial("nuevo", registrohist , registroanterior)
+                }else{
+                   ClientesService.updateClientes(registro.id, registro).then((response) =>{
+                         setview(false)
+                   }).catch((error)=>{
+                         console.log(error)
+                   })
+                     generaHistorial(registro.id, registrohist , registroanterior)
+    }
+       } }else{
+            
+              alert("Favor de llenar todos los Campos")
+        }
 } 
+    const handleKeyPress = (event) => {
+      if(event.key === 'Enter'){
+        handleopen();
+      }
+    }
+
 const seg_corr = (x)=>{
-      if(x ==='correccion'){
-            setx('correccion')
+      if(x ==='Correccion'){
+            setx('Correccion')
             setview2(false)
       }else{
-            setx('segunda')
-            setview2(false)             
-      }
+       let id = registro.id           
+ClientesService.getnuevapoNA(sub).then((response) => {
+      if (response.data[0]?.folio_tt !== undefined) {
+  const datos = response.data[0];
+  const datosFormateados = Object.fromEntries(
+    Object.entries(datos).map(([clave, valor]) => {
+      if (typeof valor === "string") {
+        if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+          return [clave, `${valor}T00:00`];
+        }
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+          const [dia, mes, anio] = valor.split("/");
+          const fechaISO = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+          const fecha = new Date(fechaISO);
+          if (!isNaN(fecha.getTime())) {
+            return [clave, `${fechaISO}T00:00`];
+            }}}
+      return [clave, valor];
+    }));
+  
+  datosFormateados.montopi = ""
+  setRegistro(datosFormateados); 
+  setRegistro((prev) => ({...prev, ["id"]: id} ))
+  setx('segunda')
+  setview2(false)
+} else {
+  alert("NO EXISTE PO " + sub + " en Socs");
+}}).catch(error => {
+    console.log(error);
+  });
+}
+  setview(true);
 }
   const cerrar = ()=>{
     setsub();
     setview(false);
   };
-  const ActualizarRegistro = (a) =>{
-      console.log(a.target.name )
-      let valor;
-   if (a.target.type === "date") {
-       valor = `${a.target.value}T00:00`;
- } else {
-      valor = a.target.value;
- }
-      setRegistro((prev) => ({...prev, [a.target.name]: valor} ))
-      setRegistro((prev) => ({...prev, ["fecha_inicio"]: new Date().toISOString().split('T')[0] + "T00:00"} ))
-      setRegistro((prev) => ({...prev, ["fecha_revision"]: new Date().toISOString().split('T')[0] + "T00:00"} ))
+ const ActualizarRegistro = (a, nume) => {
+  if (a.target.name === "unidad_de_negocio") {
+      ClientesService.getcombProv(registro.no_de_proveedor + a.target.value).then((response)=>{
+          setRegistro((prev) => ({...prev, 
+            ["gerente_de_compras"]: response.data.gte_Responsable_BU,
+            ["confirmador"]: response.data.planeador_planeacion,
+            ["validaciones_extraordinarias"]: response.data.tc_MP
+          } ))
+
+      }).catch((error)=>{
+        console.log(error)
+      })
+  }
+  let valor;
+  const nuevoRegistro = { ...registro };
+  if (a.target.type === "date") {
+    valor = a.target.value === "" ? null : `${a.target.value}T00:00`;
+  } else {
+    valor = a.target.value;
+  }
+  if (
+    a.target.name === "segunda" &&
+    (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")
+  ) {
+    nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"}
+  if (a.target.name === "montopi") {
+    nuevoRegistro[a.target.name] = nume;
+  } else {
+    nuevoRegistro[a.target.name] = valor;
+    const hoy = new Date().toISOString().split("T")[0] + "T00:00";
+    nuevoRegistro["fecha_inicio"] = hoy;
+    nuevoRegistro["fecha_revision"] = hoy;
+ if (BUs_Piloto(nuevoRegistro.fecha_entrega_compras, nuevoRegistro) === false) {
+  if (nuevoRegistro.liberada_por_bu === "ACEPTADA") {
+    nuevoRegistro["fecha_entrega_compras"] = null;
+  } else if (
+    nuevoRegistro.fecha_entrega_compras === null ||
+    nuevoRegistro.fecha_entrega_compras === undefined
+  ) {
+    nuevoRegistro["fecha_entrega_compras"] = hoy;
+  } else {
+    nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
+  }
 }
+setRegistro(nuevoRegistro);
+
+  }
+  nuevoRegistro["area_destino"] = obtenerEstadoEnvio(null, nuevoRegistro);
+  setRegistro(nuevoRegistro);
+};
 
     const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
+           setRegistroanterior(response.data[0])
            setRegistro(response.data[0])
-           setview(true);
+           setview2(true);
            setx('Correccion')
        if (response.data[0].segunda ==='NO')
             setview2(true);
@@ -59,6 +169,7 @@ const seg_corr = (x)=>{
       }
     ).catch(error => {
   ClientesService.getnuevapoNA(sub).then((response) => {
+
     if (response.data[0]?.folio_tt !== undefined) {
       const datos = response.data[0];
       const datosFormateados = Object.fromEntries(
@@ -71,6 +182,8 @@ const seg_corr = (x)=>{
           return [clave, valor];
         })
       );
+       datosFormateados.montopi = ""
+      setRegistroanterior(datosFormateados);
       setRegistro(datosFormateados);
       setview(true);
 
@@ -93,9 +206,9 @@ if (view2){
       return(
       <div style={{padding:'10px'}}> 
       <br></br>
-      <span style={{outline:'2px solid black'}}> PO  <b>{registro.folio_tt}</b> </span> &nbsp;
-      <button onClick={(x)=>{ seg_corr('segunda') }} className="btn btn-success mb-2"> Segunda </button>&nbsp;
-      <button onClick={(x)=>{ seg_corr('correccion') }} className="btn btn-danger mb-2"> Correccion </button>
+      <span style={{marginLeft:"12px", outline:'2px solid black'}}> PO  <b>{registro.folio_tt}</b> </span> 
+      <button style={{marginLeft:"12px"}} onClick={(x)=>{ seg_corr('segunda') }} className="btn btn-success mb-2"> Segunda </button>
+      <button style={{marginLeft:"12px"}} onClick={(x)=>{ seg_corr('Correccion') }} className="btn btn-danger mb-2"> Correccion </button>
       </div>
 )
     }
@@ -104,68 +217,98 @@ if (view2){
       return(
         <Stack direction='column' >
           <br></br>
-          <div>
-          <h2> {x === undefined ? "Nuevo Registro" : x} </h2>
-            <label for="fecha_de_recepcion" >FECHA DE RECEPCION</label> &nbsp;&nbsp;
-          <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" value={registro.fecha_de_recepcion?.split('T')[0]}/>&nbsp;&nbsp;
-            <label for="fecha_inicio" >FECHA INICIO</label> &nbsp;&nbsp;
+          <div style={{border:"groove"}}>
+          <h2 style={{ marginLeft:"10px" ,  color: registro.status_de_embarque === "X" ? "red": "black" }}> {x === undefined ? registro.status_de_embarque === "X" ? "CANCELADA" : "Nuevo Registro" : x ==="Correccion" ? "CORRECCIÓN" : "SEGUNDA" }     </h2> 
+          
+            <label style={{marginLeft:"12px"}} for="fecha_de_recepcion" >FECHA DE RECEPCION</label> 
+          <input onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_de_recepcion" value={registro.fecha_de_recepcion?.split('T')[0]}/>
+            <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
+            <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
+          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"7%"}} type={registro.liberada_por_bu === "ACEPTADA" ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={registro.liberada_por_bu === "ACEPTADA" ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
+            <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
+            <label style={{width:'1%'}}></label>
+            <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>      
+          <p></p>
           </div>
+            <p></p>
           <Stack direction='column'  >
-            <fieldset  style={{ outline: '1px solid black'}}> &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}} for='NoPO' > No Po <br></br> 
+            <fieldset  style={{ outline: '1px solid black'}}>
+            <label style={{marginLeft:"12px", display:'inline-block', width:'10%'}} for='NoPO' > NO. PO <br></br> 
             <Input readOnly value={sub} name="NoPO" style={{borderStyle:'groove', width:'100%'}}></Input> </label>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <label style={{  display:'inline-block', width:'10%'}} for='foliott'> Folio TT <br></br> 
+            <label style={{ marginLeft:"12px", display:'inline-block', width:'10%'}} for='foliott'> FOLIO TT <br></br> 
                 <Input readOnly name="no_oc" style={{borderStyle:'groove', width:'80%'}}value={registro.no_oc}></Input></label>
-                <label style={{  display:'inline-block', width:'17%'}} for='bu'> Unidad de Negocio 
-                <select id="bu" name="unidad_de_negocio" style={{borderStyle:'groove', width:'100%' }} >
+                <label style={{  display:'inline-block', width:'17%'}} for='bu'> UNIDAD DE NEGOCIO 
+                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="bu" name="unidad_de_negocio" style={{borderStyle:'groove', width:'100%' }} >
                         <option>{registro.unidad_de_negocio}</option>
                          {BUs.map((item) => (
                         <option key={item} value={item}>
                               {item}
                         </option>
                         ))} 
-                  </select></label> &nbsp;&nbsp;
-            <label  style={{  display:'inline-block', width:'15%'}} for='noprov'> Numero de Proveedor 
+                  </select></label>
+            <label  style={{marginLeft:"12px",  display:'inline-block', width:'15%'}} for='noprov'> NUMERO DE PROVEEDOR 
                 <Input readOnly name="no_de_proveedor" style={{borderStyle:'groove', width:'90%' }} value={registro.no_de_proveedor}></Input></label>
-            <label style={{  marginTop:'1%', display:'inline-block', width:'43%'}} for='nprov'> Proveedor 
+            <label style={{  marginTop:'1%', display:'inline-block', width:'43%'}} for='nprov'> PROVEEDOR
             <input multiline='true' readOnly name="proveedor" style={{borderStyle:'groove', width:'100%' }} value={registro.proveedor}></input></label>
                 <hr></hr>
-                &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'19%'}} for='gcompras'> Gerente Compras 
-                <Input readOnly name="gerente_de_compras" style={{borderStyle:'groove', width:'100%' }} value={registro.gerente_de_compras}></Input></label> &nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'23%'}} for='confir'> Confirmador 
-                <Input readOnly name="confirmador" style={{borderStyle:'groove', width:'100%' }} value={registro.confirmador}></Input></label> &nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}}  for='etdf'> ETD 
-                <Input readOnly name="etd_po" type="date" style={{borderStyle:'groove', width:'100%' }} value={fechaFormateada(registro.etd_po)}></Input></label>&nbsp;&nbsp;&nbsp;
+            <label style={{marginLeft:"12px", display:'inline-block', width:'19%'}} for='gcompras'> GERENTE COMPRAS 
+                <Input readOnly name="gerente_de_compras" style={{borderStyle:'groove', width:'100%' }} value={registro.gerente_de_compras}></Input></label>
+            <label style={{marginLeft:"12px", display:'inline-block', width:'23%'}} for='confir'> CONFIRMADOR 
 
-              <label style={{ display:'inline-block', width:'12%'}}  for='ptodirecto'> Pto Directo
-                <Input readOnly name="pto_directo" style={{ borderStyle:'groove', width:'100%' }} value={registro.pto_directo}></Input></label>&nbsp;&nbsp;&nbsp;
-              <label style={{ display:'inline-block', width:'6%'}}  for='moneda'> Moneda 
-                <Input readOnly name="moneda" style={{borderStyle:'groove', width:'100%' }} value={registro.moneda}></Input></label>&nbsp;&nbsp;&nbsp;
-              <label style={{ display:'inline-block', width:'18%'}}  for='vextr'> Validaciones Extraodinarias 
-                <Input readOnly name="validaciones_extraordinarias"  style={{borderStyle:'groove', width:'100%' }} value={registro.validaciones_extraordinarias}></Input></label>
+                <Input readOnly name="confirmador" style={{borderStyle:'groove', width:'100%' }} value={registro.confirmador === "0" ? "TBD" : registro.confirmador}></Input></label>
+              <label style={{marginLeft:"12px", display:'inline-block', width:'12%'}}  for='ptodirecto'> PTO. DIRECTO
+                <Input readOnly name="pto_directo" style={{ borderStyle:'groove', width:'100%' }} value={registro.pto_directo}></Input></label>
+
+              <label style={{marginLeft:"12px", display:'inline-block', width:'10%'}}  for='montopi'> MONTO PI
+                <Input title="SOLO PERMITE PEGAR" onChange={(a)=>{ActualizarRegistro(a)}} 
+                        onKeyDown={(e) => {
+                        const isPaste = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v';
+                        const isTab = e.key === 'Tab';
+                        if (!isPaste && !isTab) {
+                        e.preventDefault();
+                        }}}
+onPaste={(e) => {
+  const textoPegado = e.clipboardData.getData('text');
+  const textoLimpio = textoPegado.replace(/[^\d.,]/g, '');
+  const regex = /^(\d{1,3}(,\d{3})*|\d+)(\.\d{1,2})?$/;
+
+  if (regex.test(textoLimpio)) {
+    const numero = textoLimpio.replace(/,/g, '');
+    ActualizarRegistro(e, numero);
+    e.preventDefault();
+  } else {
+    e.preventDefault();}}}  name="montopi" style={{ borderStyle:'groove', width:'100%', textAlign:"center" }} value={Number(registro.montopi).toLocaleString("es-MX", {
+    style: "currency",currency: "MXN"})} ></Input></label>
+
+              <label style={{marginLeft:"12px", display:'inline-block', width:'6%'}}  for='moneda'> MONEDA 
+                <Input readOnly name="moneda" style={{borderStyle:'groove', width:'100%' }} value={registro.moneda}></Input></label>
+              <label style={{marginLeft:"12px", display:'inline-block', width:'10%', backgroundColor:'red' , color:'white', textAlign:'center'}}  for='validaciones_extraordinarias'> <b>VALIDAR TC/MP </b>
+                <Input readOnly name="validaciones_extraordinarias" style={{borderStyle:'groove', width:'100%' , backgroundColor:'white' }} value={registro.validaciones_extraordinarias}></Input></label>
                 <hr></hr>
-                &nbsp;&nbsp;&nbsp;
-                {registro.fecha_matrices === "" ? (<></>) : ( <> <label style={{ display: 'inline-block', width: '45%' }} htmlFor='Mmatrices'> Motivo Matrices <Input multiline readOnly name="motivo_matrices" style={{ borderStyle: 'groove', width: '100%' }} value={registro.motivo_matrices}/>
+
+                {registro.fecha_matrices === "" ? (<></>) : ( <> <label style={{marginLeft:"12px", display: 'inline-block', width: '38%' }} htmlFor='Mmatrices'> MOTIVO MATRICES <Input multiline readOnly name="motivo_matrices" style={{ borderStyle: 'groove', width: '100%' }} value={registro.motivo_matrices }/>
     </label>
-    &nbsp;&nbsp;&nbsp;
-    <label style={{ display: 'inline-block', width: '18%' }} htmlFor='FMatrices'>
-      Fecha Matrices
-      <Input readOnly type={registro.fecha_matrices === undefined ? "" : "date"} name="fecha_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={registro.fecha_matrices === undefined ? "N/A" : registro.fecha_matrices} /></label></>)}
-                <hr></hr>
-          &nbsp;&nbsp;&nbsp;            
-          <label style={{ display:'inline-block', width:'6%'}}  for='segunda'> 2DA 
+    <label style={{marginLeft:"12px", display: 'inline-block', width: '10%' }} htmlFor='FMatrices'>
+      FECHA MATRICES
+      <Input readOnly type= {(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? "text" : "date" : "text"} name="fecha_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? null : new Date(registro.fecha_matrices).toISOString().split('T')[0] : registro.fecha_matrices} /> 
+      </label></>)}
+      
+                  <label style={{marginLeft:"2%", display: 'inline-block', width: '15%' }} htmlFor='liberada_por_matrices'>LIBERADA POR MATRICES
+                  <Input readOnly  name="liberada_por_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={registro.liberada_por_matrices } /></label>
+
+                  <label style={{marginLeft:"2%", display: 'inline-block', width: '25%' }} htmlFor='liberacion_de_matr_con_sello'>LIBERACION DE MATRICES CON SELLO
+                  <Input readOnly  name="liberacion_de_matr_con_sello" style={{ borderStyle: 'groove', width: '100%' }}  value={registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello } /></label>
+                <hr></hr>            
+          <label style={{marginLeft:"19px", display:'inline-block', width:'6%'}}  for='Segunda'> 2DA 
                   <select defaultValue={x === '2da' ? 'SI' :  x === '' ? '' : registro.segunda}  onChange={(a)=>{ActualizarRegistro(a)}} name="segunda" style={{width:'100%'}}  >
                         <option>...</option>
                         <option>SI</option>
                         <option>NO</option>
                         <option>PF</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'11%'}}  for='Precio'> PRECIO 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="precio" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.precio : ''} >
+            <label style={{marginLeft:"19px", display:'inline-block', width:'11%'}}  for='Precio'> PRECIO 
+                  <select onChange={(a)=>{ActualizarRegistro(a)}} name="precio" style={{width:'100%', color:["A LA ALZA","A LA BAJA","ALZA Y BAJA"].includes(registro.precio) ? "red" : "black"}} value={registro.precio} >
                         <option>...</option>
                         <option>A LA ALZA</option>
                         <option>A LA BAJA</option>
@@ -174,119 +317,153 @@ if (view2){
                         <option>MONEDA</option>
                         <option>NOTA $</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}}  for='matriz'> MATRIZ 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="matriz" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.matriz : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'10%'}}  for='matriz'> MATRIZ 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="matriz" style={{width:'100%'}} value={registro.matriz}>
                         <option>...</option>
                         <option>REFERENCIA</option>
                         <option>FIRMADA</option>
                         <option>MIXTA</option>
                         <option>N/A</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='Dfiscales'> DATOS FISCALES 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="datos_fiscales" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.datos_fiscales : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='Dfiscales'> DATOS FISCALES 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="datos_fiscales" style={{width:'100%', color: registro.datos_fiscales ==="MAL" ? "red" : "black"}} value={registro.datos_fiscales}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='tpago'> TERM DE PAGO 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="term_de_pago" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.term_de_pago : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='tpago'> TERM DE PAGO 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="term_de_pago" style={{width:'100%', backgroundColor: registro.term_de_pago ==="MAL" ? "red" : ""}} value={registro.term_de_pago}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='dprov'> DIR DE PROV 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="dir_de_prov" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.dir_de_prov : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='dprov'> DIR DE PROV 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="dir_de_prov" style={{width:'100%', color: registro.dir_de_prov ==="MAL" ? "red" : "black"}} value={registro.dir_de_prov}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='taxid'> TAX ID 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="tax_id" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.tax_id : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='taxid'> TAX ID 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="tax_id" style={{width:'100%', color: registro.tax_id ==="MAL" ? "red" : "black"}} value={registro.tax_id}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='incoterm'> INCOTERM
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="incoterm" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.incoterm : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='incoterm'> INCOTERM
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="incoterm" style={{width:'100%', color: registro.incoterm ==="MAL" ? "red" : "black"}} value={registro.incoterm}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='qty'> QTY 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="qty" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.qty : ''}>
+            <label style={{marginLeft:"19px", display:'inline-block', width:'7%'}}  for='qty'> QTY 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="qty" style={{width:'100%', color: registro.qty ==="MAL" ? "red" : "black"}} value={registro.qty}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='etdnw'> ETD 
-                  <select onChange={(a)=>{ActualizarRegistro(a)}} name="etd" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.etd : ''}>
+                  <hr></hr>
+            <label style={{marginLeft:"12px", display:'inline-block', width:'7%'}}  for='etdnw'> ETD 
+                  <select onChange={(a)=>{ActualizarRegistro(a)}} name="etd" style={{width:'100%', color: registro.etd ==="MAL" ? "red" : "black"}} value={registro.etd}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}}  for='addelim'> ADD/ELIM ITEM 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="add_elim_item" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.add_elim_item : ''}>
+            <label style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='etdf'> ETD PO 
+                <Input readOnly name="etd_po" type="date" style={{borderStyle:'groove', width:'100%' }} value={fechaFormateada(registro.etd_po)}></Input></label>
+            <label style={{marginLeft:"18px", display:'inline-block', width:'12%'}}  for='etdf'> ETD PI
+                <Input style={{borderStyle:'groove'}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="etd_pi" value={registro.etd_pi?.split('T')[0]}></Input></label>
+
+            <label style={{marginLeft:"18px", display:'inline-block', width:'15%'}}  for='addelim'> ADD/ELIM ITEM 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="add_elim_item" style={{width:'100%'}} value={registro.add_elim_item}>
                         <option>...</option>
                         <option>ADD ITEM</option>
-                        <option>ALIM ITEM</option>
+                        <option>ELIM ITEM</option>
                         <option>N/A</option>
                         <option>ELIM/ADD</option>
                         <option>HC</option>
                   </select></label>
-                  <p></p>
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'7%'}}  for='pesovol'> PESO/VOL 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="peso_vol" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.peso_vol : ''}>
+            <label style={{marginLeft:"18px", display:'inline-block', width:'7%'}}  for='pesovol'> PESO/VOL 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="peso_vol" style={{width:'100%', color: registro.peso_vol ==="MAL" ? "red" : "black"}} value={registro.peso_vol}>
                         <option>...</option>
                         <option>OK</option>
                         <option>MAL</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}}  for='validpopi'> VALIDACIÓN POD VS PI 
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="validacion_pod_vs_pi" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.validacion_pod_vs_pi : ''}>
+            <label style={{marginLeft:"18px", display:'inline-block', width:'16%'}}  for='validpopi'> VALIDACIÓN POD VS PI 
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="validacion_pod_vs_pi" style={{width:'100%'}} value={registro.validacion_pod_vs_pi}>
                         <option>...</option>
                         <option>OK</option>
                         <option>NO INDICA</option>
                         <option>DIFERENTE</option>
                         <option>N/A</option>
                   </select></label>
-            &nbsp;&nbsp;&nbsp;
-            <label style={{ display:'inline-block', width:'10%'}}  for='condicion_de_matrices'> CONDICIÓN DE MATRICES  
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="condicion_de_matrices" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.condicion_de_matrices : ''}>
-                        <option>...</option>
+            <label style={{marginLeft:"18px", display:'inline-block', width:'17%'}}  for='condicion_de_matrices'> CONDICIÓN DE MATRICES  
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="condicion_de_matrices" style={{width:'100%'}} value={registro.condicion_de_matrices}>
+                        <option> </option>
+                        <option><b>---</b></option>
                         <option>NAM</option>
                   </select></label>
+                  <hr></hr>
+                  <label style={{marginLeft:"18px", display: 'inline-block', width: '38%' }} htmlFor='observaciones'> OBSERVACIONES 
+                        <Input multiline  onChange={(a)=>{ActualizarRegistro(a)}} name="observaciones" style={{ borderStyle: 'groove', width: '100%' }} value={registro.observaciones}/></label>
 
-        <label style={{width:'12%'}}></label>
-        <label style={{ display:'inline-block', width:'10%' ,  textAlign:'center'}}  for='compartida'> <b>COMPARTIDA</b>  
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.compartida : ''}>
+            <label style={{marginLeft:"18px", display: 'inline-block', width: '15%' }} htmlFor='area_destino'> AREA DESTINO 
+                        <Input readOnly name="area_destino" style={{ borderStyle: 'groove', width: '100%' }} value={obtenerEstadoEnvio(registro.fecha_area_destino, registro)}/></label>
+            <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_area_destino'> FECHA AREA DESTINO
+      <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_area_destino" value={registro.fecha_area_destino?.split('T')[0]}></Input></label>      
+
+        <label style={{ marginLeft:"7%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}} for='compartida'> <b>COMPARTIDA</b>  
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="compartida" style={{width:'100%'}} value={registro.compartida}>
                         <option>...</option>
                         <option>Si</option>
                         <option>No</option>
                   </select></label>
-                  <label style={{width:'7%'}}></label>
-
-            <label style={{ display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}}  for='trial'> <b>TRIAL</b>  
-                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="trial" style={{width:'100%'}} value={x === 'correccion' ||  x === undefined ? registro.trial : ''}>
+            <label style={{marginLeft:"2%", display:'inline-block', width:'10%' , backgroundColor:'red' , color:'white', textAlign:'center'}}  for='trial'> <b>TRIAL</b>  
+                  <select  onChange={(a)=>{ActualizarRegistro(a)}} name="trial" style={{width:'100%'}} value={registro.trial}>
                         <option>...</option>
                         <option>Si</option>
                         <option>No</option>
                   </select></label>
-                  <label style={{width:'10%'}}></label>
+                  <hr></hr>
+            <label style={{ marginLeft:"12px", display:'inline-block', width:'12%'}} for='bu'> LIBERADA POR BU 
+                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_bu" name="liberada_por_bu" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_bu} >
+                        <option > </option> 
+                        <option >ACEPTADA</option> 
+                        <option >RECHAZADA</option> 
+                  </select></label>
+            <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_bu'> FECHA BU
+                <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_bu" value={registro.fecha_bu?.split('T')[0]}></Input></label>      
+            <label hidden={x !== "Correccion" ? true : false  } style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR PLANEACION 
+                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_planeacion" name="liberada_por_planeacion" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_planeacion} >
+                        <option > </option> 
+                        <option >ACEPTADA</option> 
+                        <option >RECHAZADA</option> 
+                  </select></label>
 
-                  <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%"}}>Guardar</button>
-                  <label style={{width:'1%'}}></label>
-                  <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>
-            &nbsp;&nbsp;&nbsp;
+            <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_planeacion'> FECHA PLANEACION
+                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_planeacion" value={registro.fecha_planeacion?.split('T')[0]}></Input></label>      
+
+            <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR AUDITORIA 
+                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_auditoria" name="liberada_por_auditoria" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_auditoria} >
+                        <option > </option> 
+                        <option >ACEPTADA</option> 
+                        <option >RECHAZADA</option> 
+                  </select></label>
+
+            <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_auditoria'> FECHA AUDITORIA
+                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_auditoria" value={registro.fecha_auditoria?.split('T')[0]}></Input></label>      
+
+            <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR SAP 
+                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_sap" name="liberada_por_sap" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_sap} >
+                        <option > </option> 
+                        <option >ACEPTADA</option> 
+                        <option >RECHAZADA</option> 
+                  </select></label>
+
+            <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_sap'> FECHA SAP
+                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_sap" value={registro.fecha_sap?.split('T')[0]}></Input></label>      
+
+            <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_sap'> ACUSE
+                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}}  name="acuse" value={registro.acuse}></Input></label>      
           <p></p>
             </fieldset>
             <div>
@@ -296,15 +473,12 @@ if (view2){
         </Stack>
       );
     }
-
   return (
-    <Stack direction="row"  style={{ marginTop: "30px", width: "100px" }} >
-        <input  onChange={(i)=>{setsub(i.target.value)}} type="number" placeholder="Digite PO" ></input>
-        &nbsp;&nbsp;
+    <Stack direction="row"  style={{marginLeft:"12px", marginTop: "30px", width: "100px" }} >
+        <input  onChange={(i)=>{setsub(i.target.value)}} type="number" placeholder="Digite PO"  onKeyPress={handleKeyPress}></input>
         <button onClick={()=>{handleopen()}} className="buscar" style={{ padding:'5px', color:'white', backgroundColor:'green', borderRadius:"10%"}}> Aceptar </button>
     </Stack>
   );
-  
 }
 
 export default NuevaPO;

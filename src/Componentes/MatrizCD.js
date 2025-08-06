@@ -1,46 +1,61 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import { Link } from "react-router-dom";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material/";
+import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material/";
 import { BUs } from "./materialReutilizable/RangosReusables"
+import { obtenerEstadoEnvio } from "./materialReutilizable/AreaDestino";
+import { ExportarExcel } from './materialReutilizable/ExportarExcel'
 import {
   DataGrid,
   GridToolbarContainer,
   GridToolbarExport,
   GridRowEditStopReasons,
 } from "@mui/x-data-grid";
+import CircularProgress from "@mui/material/CircularProgress";
 import Stack from "@mui/material/Stack";
 import { useEffect } from "react";
-import Clienteservice from "../service/ClientesService";
+import ClientesService from "../service/ClientesService";
 import "./button.css";
+import { generaHistorial } from "./materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
+  const [loading, setLoading] = React.useState(false);
   const [dialogo2, setdialogo2] = React.useState(false);
   const [rowModesModel, setRowModesModel] = React.useState({});
   const [filtrofull, setfiltrofull] = React.useState([]);
   const [valores, setvalores] = React.useState([]);
+  const [histant, sethistant] = React.useState([]);
   const [dialogo, setdialogo] = React.useState(false);
   const [modificar, setmodificar] = React.useState(false);
-  const [sortModel, setSortModel] = React.useState([
-    {
-      field: "fecha_de_recepcion",
-      sort: "desc",
-    },
-  ]);
+const [sortModel, setSortModel] = React.useState([
+   {
+     field: "fecha_inicio",
+     sort: "desc",
+   },
+  {
+    field: "no_de_proveedor",
+    sort: "desc",
+  },
+]);
   const handleClose = () => {
     setdialogo(false);
     setdialogo2(false);
     
   };
   const refreshTab = ()=> {
+    setLoading(true)
     setmodificar(false);
     setfiltrofull()
-    Clienteservice.getAllmatrizcd().then((response)=>{
+    ClientesService.getAllmatrizcd().then((response)=>{
       setvalores(response.data)
+      sethistant(response.data)
     }).catch((error)=>{
       console.log(error)
     })
-  }
+   setTimeout(() => {
+     setLoading(false);
+   }, 3000);
 
+  }
   function transformarFechas(obj) {
   const regexFecha = /^\d{2}\/\d{2}\/\d{4}$/;
 
@@ -62,11 +77,13 @@ function FullFeaturedCrudGrid() {
 }
 
   const listarClientes = (e) => {
+        setLoading(true);
     const nwarr = new Array();
-    Clienteservice.getAllmatrizcd()
+    ClientesService.getAllmatrizcd()
       .then((response) => {
         if (e === undefined && filtrofull.length === 0) {
           setvalores(response.data);
+          sethistant(response.data);
         } else {
           if (typeof filtrofull !== "object") {
             const var2 = filtrofull.split("\n");
@@ -80,6 +97,7 @@ function FullFeaturedCrudGrid() {
                   break;
                 }}
               setvalores(nwarr);
+              sethistant(nwarr)
             });
           } else {
             let i = 0;
@@ -90,59 +108,80 @@ function FullFeaturedCrudGrid() {
                 nwarr.push(response.data[i]);
               }}
             setvalores(nwarr);
+            sethistant(nwarr)
           }}})
       .catch((error) => {
         console.log(error);
-      });};
+      });
+      setTimeout(() => {
+    setLoading(false);
+  }, 4500);
+};
 
 const filtrosCalculados = (e)=>{
+  setLoading(true)
       const nwarr = new Array();
-  Clienteservice.getAllClientes().then((response)=>{
+  ClientesService.getAllClientes().then((response)=>{
+            const hoy = new Date().toISOString().split('T')[0] + "T00:00:00";
         for (let i = 0; i < response.data.length; i++) {
             const var1 = response.data[i].area_destino;
-            const var2 = response.data[i].fecha_area_destino;
-            const hoy = new Date().toISOString().split('T')[0] + "T00:00:00";
+            const var2 = new Date(response.data[i].fecha_area_destino).toISOString().split('T')[0] + "T00:00:00";
             const acuseV = response.data[i].acuse;
-              if (var1 === e.target.name && var2 === hoy && (acuseV === "" || acuseV === null)) {
+              if ((e.target.name === "ENVIO" ? ["ENVIO", "AUDITORIA/SAP"].includes(var1) : e.target.name === var1)  && var2.split('T')[0] === hoy.split('T')[0] ) {
                 nwarr.push(response.data[i]);
               }
           setvalores(nwarr);
+          sethistant(nwarr)
         };
   }).catch((error)=>{
     console.log(error)
   })
+  setTimeout(() => {
+    setLoading(false);
+  }, 4000);
 }      
 
   const fechaarea = (e) => { 
-    e.target.id.replace("liberada_por_","fecha_")
-    setvalores(prevValores =>
-    prevValores.map(val => ({
-      ...val,
-      [e.target.id.replace("liberada_por_","fecha_")]: new Date().toISOString().split('T')[0] + "T00:00:00"
-    })));
+   e.target.id.replace("liberada_por_","fecha_")
+   setvalores(prevValores =>
+   prevValores.map(val => ({
+     ...val,
+     [e.target.id.replace("liberada_por_","fecha_")]: e.target.value === "" ? "" : new Date().toISOString().split('T')[0] + "T00:00:00"
+       })));
 }
 const cambiomasivos = (event) => {
-  fechaarea(event);
-  setvalores(prevValores =>
-    prevValores.map(val => ({
-      ...val,
-      [event.target.id]: event.target.value
-    }))
-  );
+   fechaarea(event);
+   setvalores(prevValores =>
+     prevValores.map(val => ({
+       ...val,
+       [event.target.id]:  event.target.value === "" ? null : (event.target.id ==="fecha_de_envio"  ||  event.target.id ==="fecha_area_destino") ?  event.target.value + "T00:00:00"  :  event.target.value 
+     }))
+   );
 };
 
-const postearStatus = () => {
-   valores.forEach(val => {
-      Clienteservice.updatematrizcd(val.id, val)
-        .then((response) => {
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+const postearStatus = async () => {
+   setLoading(true); 
+   let avance = 0;
+   const promesas = valores.map(val => {
+     generaHistorial("masivo", valores[avance], histant[avance]);
+
+     const value = obtenerEstadoEnvio(null, val);
+     val.area_destino = value;
+
+     avance++;
+     return ClientesService.updatematrizcd(val.id, val)
+       .catch((error) => {
+         console.error("Error actualizando fila:", val.id, error);
+       });
    });
-           setdialogo2(false);
-          listarClientes()         
+   await Promise.all(promesas);
+   setdialogo2(false);
+   listarClientes();
+   setTimeout(() => {
+     setLoading(false);
+   }, 3000);
 };
+
 const nuevorango = (filtrofull) => {
     setfiltrofull(filtrofull.target.value);
   };
@@ -150,9 +189,13 @@ const nuevorango = (filtrofull) => {
     setdialogo2(true);
   };
   const funcionfiltro = () => {
+    setLoading(true);
     setdialogo(false);
     listarClientes();
     setmodificar(true);
+      setTimeout(() => {
+    setLoading(false);
+  }, 4000);
   };
 
   useEffect(() => {
@@ -190,7 +233,7 @@ const nuevorango = (filtrofull) => {
       <div>
         <Dialog open={dialogo2} onClose={handleClose} PaperProps={{style: {backgroundColor: 'transparent',}, }}
                           BackdropProps={{style: { backgroundColor: "transparent", }, }}> 
-          <DialogTitle>Modificar Masivo</DialogTitle>
+            <DialogTitle>Modificar Masivo</DialogTitle>            
           <DialogContent>
             <Box
               // noValidate
@@ -202,7 +245,25 @@ const nuevorango = (filtrofull) => {
                 width: "fit-content",
               }}
             >
-              <span>{filtrofull}</span>
+              <Stack direction="row">
+              <span style={{width:"35%"}}>{filtrofull}</span>
+                          <div style={{ marginLeft:"2%",  width:"25%", flexDirection: 'row'  }}>
+                          <Stack direction="row">
+                            <Stack direction="column">
+                              <label style={{fontSize:13 }}>ENVIO A PROVEEDOR</label>
+                              <input style={{width:"110px"}} type="text" onChange={cambiomasivos}  id="envio_a_proveedor" value={valores[0].envio_a_proveedor}/ >
+                            </Stack>
+                            <Stack direction="column">
+                              <label style={{width:"80px" , fontSize:13}}>FECHA DE ENVIO</label>
+                              <input style={{width:"110px"}} type=  "date" onChange={cambiomasivos}  id="fecha_de_envio" value={valores[0].fecha_de_envio === null ? "" : new Date(valores[0].fecha_de_envio).toISOString().split('T')[0]} / >
+                            </Stack>
+                            <Stack direction="column">
+                              <label style={{fontSize:13}}>FECHA AREA DESTINO</label>
+                              <input style={{width:"110px"}} type=  "date" onChange={cambiomasivos}  id="fecha_area_destino" value={valores[0].fecha_area_destino === null ? "" : new Date(valores[0].fecha_area_destino).toISOString().split('T')[0]} / >
+                            </Stack>
+                          </Stack>
+                          </div>
+              </Stack>
               <Stack direction="row" >
                 <table class="table" >
                   <thead>
@@ -225,6 +286,7 @@ const nuevorango = (filtrofull) => {
                       <th scope="row">
                       <select id="liberada_por_bu" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_bu}</option>
+                        <option> </option>
                         <option> ACEPTADA</option>
                         <option> RECHAZADA</option>
                       </select>
@@ -232,6 +294,7 @@ const nuevorango = (filtrofull) => {
                     <th scope="row">
                       <select id="liberada_por_planeacion" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_planeacion}</option>
+                        <option> </option>
                         <option> ACEPTADA</option>
                         <option> RECHAZADA</option>
                       </select>
@@ -239,6 +302,7 @@ const nuevorango = (filtrofull) => {
                     <th scope="row">
                       <select id="liberada_por_auditoria" onChange={cambiomasivos} style={{fontSize:12}}>
                         <option> {valores[0].liberada_por_auditoria}</option>
+                        <option> </option>
                         <option> ACEPTADA</option>
                         <option> RECHAZADA</option>
                       </select>
@@ -246,6 +310,7 @@ const nuevorango = (filtrofull) => {
                     <th scope="row">
                       <select id="liberada_por_sap" onChange={cambiomasivos} style={{fontSize:12}}>                                            
                         <option> {valores[0].liberada_por_sap}</option>
+                        <option>  </option>
                         <option> ACEPTADA</option>
                         <option> RECHAZADA</option>
                       </select>
@@ -269,40 +334,42 @@ const nuevorango = (filtrofull) => {
   }
 
   function CustomToolbar() {
+      const [poHist,setpoHist] = React.useState();
     return (
-      <GridToolbarContainer>
-        <Link to={`/importaciones/controldocumental/matrizcd/NuevaPO`} className="btn btn-success">  Nueva PO </Link>
-        <button  className="filtropos"  onClick={() => { setdialogo(true);}}>
+  <GridToolbarContainer>
+        <Link to={`/importaciones/controldocumental/matrizcd/NuevaPO`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">  NUEVA PO </Link>
+        <button  style={{backgroundColor:"#4EA72E"}}  className="btn btn-success"  onClick={() => { setdialogo(true);}}>
           {" "} Filtro por POs{" "}
         </button>
-        <button className="btn btn-warning" name="PLANEACION" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Planeacion</button>
-        <button className="btn btn-info" name="ENVIO" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Envio</button>
-        <button className="btn btn-primary" name="Refresh" onClick={()=>{ refreshTab() }}> <b>↻</b> </button>
+        <button style={{backgroundColor:"#8ED973"}}  className="btn btn"  name="PLANEACION" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Planeacion</button>
+        <button style={{backgroundColor:"#B5E6A2"}}  className="btn btn"  name="ENVIO" onClick={(e)=>{ filtrosCalculados(e) }}> Filtro Envio</button>
+        <button  style={{backgroundColor:"#CAE8AA"}}  className="btn btn" name="Refresh" onClick={()=>{ refreshTab() }}> <b>↻</b> </button>
         {modificar === true ? (
           <button onClick={() => { abrirdialogo(filtrofull);}}style={{ backgroundColor: "red", borderRadius: "10px", color: "white",}}>{" "} Modificar Masivo{" "} </button>
         ) : (
           <button hidden className="modi">{" "} Modificar{" "} </button>
         )}
+        <input  style={{marginLeft:"20%"}} onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
+        <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
-        <GridToolbarExport
-          slotProps={{
-            tooltip: { title: "Export data" },
-            button: { variant: "outlined" },
-          }}
-        />
+        <ExportarExcel columns={columns} rows={valores}/ >
+        {/* <GridToolbarExport  csvOptions={{ utf8WithBom: true, }} slotProps={{ tooltip: { title: "Export data" }, button: { variant: "outlined" },}} /> */}
         <br></br>
         <br></br>
       </GridToolbarContainer>
     );
   }
   const funcionModif = (id, updatedRow, originalRow) => {
-const rowConFechasTransformadas = transformarFechas(updatedRow);
-   Clienteservice.updatematrizcd(id, rowConFechasTransformadas).then((response) => {
-           // funcionfiltro();
-         })
-         .catch((error) => {
-           console.log(error);
-         });
+ const value = obtenerEstadoEnvio(null, updatedRow); 
+     updatedRow.area_destino = value;
+    const rowConFechasTransformadas = transformarFechas(updatedRow);
+    generaHistorial(id, updatedRow, originalRow);
+    ClientesService.updatematrizcd(id, rowConFechasTransformadas).then((response) => {
+              //  funcionfiltro();
+            })
+            .catch((error) => {
+              console.log(error);
+            });
   };
 
   const handleProcessRowUpdateError = (error) => {
@@ -322,8 +389,9 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "fecha_de_recepcion",
       headerName: "FECHA DE RECEPCION",
       width: 110,
+      type: "date",
       editable: false,
-      headerClassName: "testback",
+      headerClassName: "gris",
       valueFormatter: (params) => {
         const date = new Date(params).toLocaleDateString("es-MX", opciones);
         return date;
@@ -333,6 +401,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "fecha_inicio",
       headerName: "FECHA",
       width: 100,
+      type: "date",
       editable: false,
       headerClassName: "gris",
       valueFormatter: (params) => {
@@ -358,7 +427,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "unidad_de_negocio",
       headerName: "UNIDAD DE NEGOCIO",
       width: 140,
-      editable: true,
+      editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       type: "singleSelect",
       headerClassName: "gris",
       valueOptions: BUs
@@ -395,25 +464,33 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "segunda",
       headerName: "2DA",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["Si", "No","PF"],
+      valueOptions: ["SI", "NO","PF"],
     },
     {
       field: "precio",
-      headerName: "PRECIO",
       width: 80,
-      editable: true,
+      headerName: "PRECIO",
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["A LA ALZA", "A LA BAJA", "OK","ALZA Y BAJA", "MONEDA", "NOTA $"],
-    },
+       cellClassName: (params) => {
+      if (!["A LA ALZA", "A LA BAJA","ALZA Y BAJA"].includes(params.value)) {
+        return "celda-ok";
+      } else if (["A LA ALZA", "A LA BAJA","ALZA Y BAJA"].includes(params.value)) {
+        return "celda-mal";
+      }
+      return "";
+  }
+},
     {
       field: "matriz",
       headerName: "MATRIZ",
       width: 140,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
@@ -422,64 +499,126 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "datos_fiscales",
       headerName: "DATOS FISCALES",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+      cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
     },
     {
       field: "term_de_pago",
       headerName: "TERM. DE PAGO",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "dir_de_prov",
       headerName: "DIR. DE PROV.",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "tax_id",
       headerName: "TAX ID",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "incoterm",
       headerName: "INCOTERM",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "qty",
       headerName: "QTY",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
-      valueOptions: ["REFERENCIA", "FIRMADA", "MIXTA","N/A"],
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "etd",
       headerName: "ETD",
       width: 80,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+
     },
     {
       field: "etd_po",
@@ -496,7 +635,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "etd_pi",
       headerName: "ETD PI",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       type: "date",
       headerClassName: "gris",
       valueFormatter: (params) => {
@@ -513,150 +652,124 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "montopi",
       headerName: "MONTO PI",
       width: 100,
-      editable: true,
-      headerClassName: "testback",
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
+      headerClassName: "gris",
       valueFormatter: (params) => {
-        return "$" + params.toLocaleString("es-MX");
+        return params === null ? "$" + 0 : "$" + params.toLocaleString("es-MX");
       },
     },
     {
       field: "moneda",
       headerName: "MONEDA",
       width: 80,
-      editable: true,
-      headerClassName: "testback",
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
+      headerClassName: "gris",
     },
     {
       field: "add_elim_item",
       headerName: "ADD/ELIM ITEM",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
+      type: "singleSelect",
+      valueOptions: ["ADD ITEM", "ELIM ITEM", "N/A", "ELIM/ADD", "HC"],
     },
     {
       field: "peso_vol",
       headerName: "PESO/VOL",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
+      type: "singleSelect",
+      valueOptions: ["OK", "MAL"],
+            cellClassName: (params) => {
+      if (params.value === "OK") {
+        return "celda-ok";
+      } else if (params.value === "MAL") {
+        return "celda-mal";
+      }
+      return "";
+  },
+      
     },
     {
       field: "pto_directo",
       headerName: "PTO. DIRECTO",
       width: 100,
-      editable: true,
+      editable: false,
       headerClassName: "gris",
     },
     {
       field: "validacion_pod_vs_pi",
       headerName: "VALIDACIÓN POD VS PI",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
+      type: "singleSelect",
+      valueOptions: ["OK", "NO INDICA", "DIFERENTE", "N/A"],
     },
     {
       field: "observaciones",
       headerName: "OBSERVACIONES",
-      width: 320,
-      editable: true,
+      width: 420,
+      height: 1000,
+      editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
-    },
+      renderCell: (params) => (
+      <div style={{
+        whiteSpace: 'pre-wrap',
+        overflow: 'hidden'
+      }}>
+      <Tooltip title={params.value?.toString() || ''}>
+          <span>{params.value}</span>
+      </Tooltip>      </div>
+    )
+   },
     {
       field: "liberacion_de_matr_con_sello",
       headerName: "LIBERACION DE MATRICES CON SELLO",
       width: 160,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field: "validaciones_extraordinarias",
       headerName: "VALIDACIONES EXTRAORDINARIAS",
       width: 160,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
     },
     {
       field: "condicion_de_matrices",
       headerName: "CONDICIÓN DE MATRICES",
       width: 110,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
-    },
+      type:"singleSelect",
+      valueOptions:["...","NAM"]
+    },  
     {
       field: "compartida",
       headerName: "Compartida",
       width: 180,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
     },
-    {
+        {
       field: "area_destino",
       headerName: "AREA DESTINO",
       width: 110,
       editable: true,
       headerClassName: "area",
       valueGetter: (value, row) => {
-        if (row.acuse === "CERRADA" || row.acuse === "CANCELADA") {
-          return row.acuse;
-        }
-        if (
-          row.qty === "OK" &&
-          row.liberada_por_bu === "ACEPTADA" &&
-          row.liberada_por_planeacion !== "" &&
-          row.liberada_por_auditoria === "ACEPTADA" &&
-          (row.addElimItem === "N/A" ||
-            row.addElimItem === "ADD ITEM" ||
-            row.addElimItem === "HC")
-        ) {
-          return "ENVIO";
-        }
-        if (
-          ["R", "PPU", "MS", "X", "N/A"].includes(row.liberada_por_matrices) &&
-          row.liberada_por_bu === "ACEPTADA" &&
-          row.liberada_por_planeacion === "ACEPTADA"
-        ) {
-          if (
-            row.qty === "MAL" ||
-            row.addElimItem !== "N/A" ||
-            row.precio !== "OK"
-          ) {
-            if (
-              row.liberada_por_auditoria === "ACEPTADA" &&
-              row.liberada_por_sap === ""
-            ) {
-              return "ENVIO";
-            } else {
-              return "AUDITORIA/SAP";
-            }
-          } else {
-            return "ENVIO";
-          }
-        } else {
-          if (
-            !["R", "PPU", "MS", "X", "N/A"].includes(row.liberada_por_matrices)
-          ) {
-          if (["Mecánica 1","Der. Petróleo 1","Máquinas 2","Htas. Manuales 1","Volteck 1","Volteck 2","Volteck 3"].includes(row.unidad_de_negocio)){
-            return "COMPRAS/PLANEACION";
-          }  else{
-            return "COMPRAS";
-          }
-          } else if (row.liberada_por_bu !== "ACEPTADA") {
-          if (["Mecánica 1","Der. Petróleo 1","Máquinas 2","Htas. Manuales 1","Volteck 1","Volteck 2","Volteck 3"].includes(row.unidad_de_negocio)){
-            return "COMPRAS/PLANEACION";
-          }  else{
-            return "COMPRAS";
-          }
-          } else {
-            return "PLANEACION";
-          }
-        }
-      },
+         return obtenerEstadoEnvio(value, row)
     },
+  },
     {
       field: "fecha_area_destino",
       headerName: "FECHA",
       width: 100,
       type: "date",
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "area",
       valueFormatter: (params) => {
         if (params === null) {
@@ -672,30 +785,28 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "acuse",
       headerName: "ACUSE",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "area",
     },
     {
       field: "status__problema",
       headerName: "STATUS/ PROBLEMA",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "area",
     },
     {
       field: "liberada_por_matrices",
       headerName: "LIBERADA POR MATRICES",
       width: 100,
-      editable: true,
+      editable: false,
       headerClassName: "matrices",
-      type: "singleSelect",
-      valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
     },
     {
       field: "fecha_matrices",
       headerName: "FECHA",
       width: 100,
-      editable: true,
+      editable: false,
       headerClassName: "matrices",
       valueFormatter: (params) => {
         if (params === null) {
@@ -711,14 +822,13 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "motivo_matrices",
       headerName: "MOTIVO",
       width: 180,
-      editable: true,
       headerClassName: "matrices",
     },
     {
       field: "liberada_por_bu",
       headerName: "LIBERADA POR BU",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -728,7 +838,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       headerName: "FECHA",
       width: 100,
       type: "date",
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
       valueFormatter: (params) => {
         if (params === null) {
@@ -744,14 +854,14 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "motivo_bu",
       headerName: "MOTIVO",
       width: 180,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "bu",
     },
     {
       field: "liberada_por_planeacion",
       headerName: "LIBERADA POR PLANEACION",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -761,7 +871,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       headerName: "FECHA",
       width: 100,
       type: "date",
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "planeacion",
       valueFormatter: (params) => {
         if (params === null) {
@@ -777,14 +887,14 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "motivo_planeacion",
       headerName: "MOTIVO",
       width: 180,
-      editable: true,
+      editable: localStorage.getItem("username") === "pruebacd" ? true : false,
       headerClassName: "planeacion",
     },
     {
       field: "liberada_por_auditoria",
       headerName: "LIBERADA POR AUDITORIA",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -794,7 +904,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       headerName: "FECHA",
       width: 100,
       type: "date",
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
       valueFormatter: (params) => {
         if (params === null) {
@@ -810,14 +920,14 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "motivo_auditoria",
       headerName: "MOTIVO",
       width: 180,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "auditoria",
     },
     {
       field: "liberada_por_sap",
       headerName: "LIBERADA POR SAP",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "sap",
       type: "singleSelect",
       valueOptions: ["" , "ACEPTADA", "RECHAZADA"],
@@ -826,7 +936,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "fecha_sap",
       headerName: "FECHA",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       type: "date",
       headerClassName: "sap",
       valueFormatter: (params) => {
@@ -843,21 +953,39 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "motivo_sap",
       headerName: "MOTIVO",
       width: 180,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "sap",
     },
     {
       field: "envio_a_proveedor",
       headerName: "ENVIO A PROVEEDOR",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl","pruebacd"].includes(localStorage.getItem("username")),
       headerClassName: "gris",
+    },
+    {
+      field:"fecha_de_envio",
+      headerName:"FECHA DE ENVIO",
+      editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
+      width: 100,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
+      type: "date",
+      headerClassName: "gris",
+      valueFormatter: (params) => {
+        if (params === null) {
+          const date = "";
+          return date;
+        } else {
+          const date = new Date(params).toLocaleDateString("es-MX", opciones);
+          return date;
+        }
+      },
     },
     {
       field: "trial",
       headerName: "TRIAL",
       width: 100,
-      editable: true,
+            editable: ["daguilarm", "natorreg", "arramirez", "gdlopezl"].includes(localStorage.getItem("username")),
       headerClassName: "trial",
     },
     {
@@ -886,13 +1014,13 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
       field: "fecha_entrega_compras",
       headerName: "FECHA DE ENTREGA COMPRAS",
       width: 100,
-      editable: true,
+      editable: false,
       headerClassName: "gris",
       type: "singleSelect",
       valueOptions: [new Date(Date()+1).toLocaleDateString("es-MX", opciones)],
       valueFormatter: (params) => {
   return params === null
-    ? ""
+    ? "N/A"
     : params.includes("T")
       ? (() => {
           const [yyyy, mm, dd] = params.split("T")[0].split("-");
@@ -908,11 +1036,34 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
 },
     },
   ];
+
+if (loading) {
   return (
+    <div style={{
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      backgroundColor: "rgba(255,255,255,0.9)",
+      padding: "30px",
+      borderRadius: "12px",
+      boxShadow: "0 0 15px rgba(0,0,0,0.2)",
+      zIndex: 9999
+    }}>
+      <CircularProgress />
+      <p style={{ marginTop: "12px", fontWeight: "bold" }}>Actualizando...</p>
+    </div>
+  );
+}
+  return (
+    <div style={{height:"550px"}}>
     <Box
-      sx={{
+      sx={{ zoom:"80%",
         marginLeft: "-50px",
-        height: 500,
+        height: "100%",
         width: "108%",
         "& .actions": {
           color: "text.secondary",
@@ -930,10 +1081,15 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
             lineHeight: "normal",
           },
           "& .MuiDataGrid-columnHeader": {
-            height: "unset ",
+            borderBottom: '1px solid #A6A6A6',
+             borderRight: '1px solid #A6A6A6',
           },
           "& .MuiDataGrid-columnHeaders": {
             maxHeight: "168px !important",
+          },
+          "& .MuiDataGrid-cell": {
+            borderRight: '1px solid #F2F2F2',  
+            borderBottom: '1px solid #F2F2F2', 
           },
         }}
         processRowUpdate={(updatedRow, originalRow) => {
@@ -946,6 +1102,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
           setRowModesModel(newRowModesModel);
           return updatedRow; 
         }}
+        getRowHeight={() => ["daguilarm", "natorreg", "arramirez", "gdlopezl", "pruebacd"].includes(localStorage.getItem("username")) ? "auto" : ""}
         filterMode="client"
         disableColumnFilter={false}
         disableColumnSelector={false}
@@ -963,6 +1120,7 @@ const rowConFechasTransformadas = transformarFechas(updatedRow);
         }}
       />
     </Box>
+    </div>
   );
 }
 
