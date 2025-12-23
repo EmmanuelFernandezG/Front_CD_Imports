@@ -39,16 +39,8 @@ export const colocador = ["-----","HDH","NNI","HMF","CDO","JBO","NRE","STI","YZH
 
 export const ordenador =[ 
   "- - - - - - - - -",
-"ALM 44",
-"ALM 45",
 "CNY",
-"CNY CRITICA",
-"LATAM / PLANTA",
-"PRICE REDUCTION",
-"P.O. CRITICA",
 "PO URGENTE",
-"PRECIO MATRIX",
 "Trial P.O. / NOM",
-"Trial P.O. CRITICA",
 "Trial P.O. URGENTE",
 ]

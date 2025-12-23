@@ -1,6 +1,7 @@
+import { useState } from "react";
 import ClientesService from "../../service/ClientesService";
 
-const generaHistorial = (e, registro, registroanterior) => {
+const GeneraHistorial = (e, registro, registroanterior) => {
   const diffs = {};
 
   for (const key in registro) {
@@ -11,6 +12,7 @@ const generaHistorial = (e, registro, registroanterior) => {
     }
   }
     let PO = registro.folio_tt;
+
   for (const key in registroanterior) {
     if (!(key in registro)) {
       diffs[key] = { registro: undefined, registroanterior: registroanterior[key] };
@@ -19,14 +21,23 @@ const generaHistorial = (e, registro, registroanterior) => {
  Object.entries(diffs).forEach(([key, value]) => {
   if (key.includes("liberada_por") || key.includes,("envio_a_proveedor")){
         if (key.includes("liberada_por")) {
-          registro[key.replace("liberada_por_", "fecha_")] = 
-            value === "" ? "" : new Date().toISOString().split('T')[0] + "T00:00:00";
-        }
+        if (registro[key.replace("liberada_por_", "fecha_")] === null && e !== "masivo"  ) {
+          const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
+          registro[key.replace("liberada_por_", "fecha_")] = opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00";
+    }
         else if (key.includes("envio_a_proveedor")){
+
           registro["fecha_de_envio"] = 
             value === "" ? "" : new Date().toISOString().split('T')[0] + "T00:00:00";
-       }
-     ClientesService.updatematrizcd(registro.id, registro).then((response) => {
+            }else if(e === "masivo"){
+                console.log("llega4")
+
+            }
+            else{
+              registro[key.replace("liberada_por_", "fecha_")] = (registro[key] === "RECHAZADA" || registro[key] === "ACEPTADA") ? registro[key.replace("liberada_por_", "fecha_")]  : null ;
+        }
+         }
+     ClientesService.updatematrizcd(registro.id, registro).then(() => {
                 // funcionfiltro();
              })
              .catch((error) => {
@@ -66,7 +77,6 @@ const generaHistorial = (e, registro, registroanterior) => {
        console.log(error)
      })
      }
-
 };
 
-export { generaHistorial };
+export { GeneraHistorial };

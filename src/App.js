@@ -12,6 +12,8 @@ import NuevaPO from './Componentes/NuevaPO';
 import HistorialContenedor from './Componentes/materialReutilizable/historialContenedor';
 import Administrador_documentos from './Componentes/Ariel_componentes/Administrador_documentos';
 import Socs from './Componentes/ComponentesSOC/Socs';
+import Sesiones from './Componentes/Ariel_componentes/Sesiones';
+import Inscritos from './Componentes/Ariel_componentes/Inscritos';
 
 function App() {
   
@@ -91,12 +93,16 @@ if(almacenlocalusuario === null){
     )
   }if(localStorage.getItem('perfil') === "Documentos"){
     return(
-      <div>
+      <div style={{ backgroundColor: '#f2f2f2'}}>
       <BrowserRouter>
       <HeaderComponent />
       <div className='container'>
       <Routes>
+            <Route exact path='record/' element={<Inicio/>}></Route>
            <Route  path='importaciones/AdmonDocs' element={<Administrador_documentos/>}></Route>   
+           <Route  path='importaciones/AdmonDocs' element={<Administrador_documentos/>}></Route>   
+           <Route  path='importaciones/Sesiones' element={<Sesiones/>}></Route>   
+           <Route  path='importaciones/inscritos' element={<Inscritos/>}></Route>   
       </Routes>
       </div>
       </BrowserRouter>

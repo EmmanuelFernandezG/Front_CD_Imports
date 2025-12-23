@@ -1,11 +1,10 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState , useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 import Stack from "@mui/material/Stack";
 import { Input } from "@mui/material";
 import { BUs } from "./materialReutilizable/RangosReusables";
-import { generaHistorial } from "./materialReutilizable/GenerarHistorial.js";
-import { obtenerEstadoEnvio, BUs_Piloto } from "./materialReutilizable/AreaDestino.js";
-import { computeOffsetLeft } from "@mui/x-data-grid/hooks/features/virtualization/useGridVirtualScroller.js";
+import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial.js";
+import { obtenerEstadoEnvio, BUs_Piloto , LiberadaPorMatrices } from "./materialReutilizable/AreaDestino.js";
 
 function NuevaPO() {
   const [x, setx] = useState();
@@ -22,38 +21,36 @@ function NuevaPO() {
     ];
   
    const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
-
-  const crearRegistro = ()=>{ 
-      setRegistrohist(registro)
-       if(todosLlenos) {
-             if( registro.montopi === ''){
-              alert("Favor de llenar Monto")
-             }else{
-           const value = obtenerEstadoEnvio(null, registro); 
-           registro.area_destino = value;
-                  if (registro.fecha_matrices !== null && registro.fecha_matrices.includes("/")) {
-                   const [day, month, year] = registro.fecha_matrices.split('/');
-             registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
-            }    
-                  if(registro.id === undefined){
-                       ClientesService.createClientes(registro).then((response) =>{
-                             setview(false)
-                       }).catch((error)=>{
-                             console.log(error)
-                       })
-                      generaHistorial("nuevo", registrohist , registroanterior)
-                }else{
-                   ClientesService.updateClientes(registro.id, registro).then((response) =>{
-                         setview(false)
-                   }).catch((error)=>{
-                         console.log(error)
-                   })
-                     generaHistorial(registro.id, registrohist , registroanterior)
-    }
-       } }else{
-            
-              alert("Favor de llenar todos los Campos")
-        }
+   const crearRegistro = ()=>{ 
+       setRegistrohist(registro)
+        if(todosLlenos || registro.segunda === "PF") {
+              if( registro.montopi === ''){
+               alert("Favor de llenar Monto")
+              }else{
+            const value = obtenerEstadoEnvio(null, registro); 
+            registro.area_destino = value;
+                   if (registro.fecha_matrices !== null && registro.fecha_matrices.includes("/")) {
+                    const [day, month, year] = registro.fecha_matrices.split('/');
+              registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
+             }    
+                   if(registro.id === undefined){
+                        ClientesService.createClientes(registro).then((response) =>{
+                              setview(false)
+                        }).catch((error)=>{
+                              console.log(error)
+                        })
+                       GeneraHistorial("nuevo", registrohist , registroanterior)
+                 }else{
+                    ClientesService.updateClientes(registro.id, registro).then((response) =>{
+                          setview(false)
+                    }).catch((error)=>{
+                          console.log(error)
+                    })
+                      GeneraHistorial(registro.id, registrohist , registroanterior)
+     }
+        } }else{
+               alert("Favor de llenar todos los Campos")
+         }
 } 
     const handleKeyPress = (event) => {
       if(event.key === 'Enter'){
@@ -85,7 +82,6 @@ ClientesService.getnuevapoNA(sub).then((response) => {
             }}}
       return [clave, valor];
     }));
-  
   datosFormateados.montopi = ""
   setRegistro(datosFormateados); 
   setRegistro((prev) => ({...prev, ["id"]: id} ))
@@ -103,7 +99,9 @@ ClientesService.getnuevapoNA(sub).then((response) => {
     setsub();
     setview(false);
   };
+  
  const ActualizarRegistro = (a, nume) => {
+  let valor;
   if (a.target.name === "unidad_de_negocio") {
       ClientesService.getcombProv(registro.no_de_proveedor + a.target.value).then((response)=>{
           setRegistro((prev) => ({...prev, 
@@ -111,18 +109,29 @@ ClientesService.getnuevapoNA(sub).then((response) => {
             ["confirmador"]: response.data.planeador_planeacion,
             ["validaciones_extraordinarias"]: response.data.tc_MP
           } ))
-
       }).catch((error)=>{
         console.log(error)
-      })
-  }
-  let valor;
+      })}
   const nuevoRegistro = { ...registro };
   if (a.target.type === "date") {
-    valor = a.target.value === "" ? null : `${a.target.value}T00:00`;
-  } else {
-    valor = a.target.value;
-  }
+    if(["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
+        const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
+     valor = a.target.value === "" ? null : opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
+    }
+  } else {    //  '''aqui me quedo    Revisar el estado en TIEMPO REAL
+      valor = a.target.value;
+ } 
+ if(["liberada_por_sap", "liberada_por_auditoria", "liberada_por_planeacion" ,"liberada_por_bu"].includes(a.target.name)){
+          if(a.target.value === ""){
+    nuevoRegistro[a.target.name.replace("liberada_por_","fecha_")] = null; 
+    }else{
+    const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
+    nuevoRegistro[a.target.name.replace("liberada_por_","fecha_")] = opcion ? new Date().toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00" 
+}
+}
+ if (a.target.type === "date" && !["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
+     valor = new Date(a.target.value).toISOString().split('T')[0] + "T00:00:00"; 
+ }
   if (
     a.target.name === "segunda" &&
     (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")
@@ -137,7 +146,8 @@ ClientesService.getnuevapoNA(sub).then((response) => {
     nuevoRegistro["fecha_revision"] = hoy;
  if (BUs_Piloto(nuevoRegistro.fecha_entrega_compras, nuevoRegistro) === false) {
   if (nuevoRegistro.liberada_por_bu === "ACEPTADA") {
-    nuevoRegistro["fecha_entrega_compras"] = null;
+    // nuevoRegistro["fecha_entrega_compras"] = null; linea anterior 
+    nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
   } else if (
     nuevoRegistro.fecha_entrega_compras === null ||
     nuevoRegistro.fecha_entrega_compras === undefined
@@ -148,13 +158,17 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   }
 }
 setRegistro(nuevoRegistro);
-
   }
   nuevoRegistro["area_destino"] = obtenerEstadoEnvio(null, nuevoRegistro);
+  LiberadaPorMatrices(nuevoRegistro).then(resp => {
+  setRegistro(prev => ({
+    ...prev,
+    liberada_por_matrices: resp
+  }));
+});
   setRegistro(nuevoRegistro);
 };
-
-    const handleopen = ()=>{
+  const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {
            setRegistroanterior(response.data[0])
@@ -225,7 +239,7 @@ if (view2){
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
-          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"7%"}} type={registro.liberada_por_bu === "ACEPTADA" ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={registro.liberada_por_bu === "ACEPTADA" ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
+          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={registro.liberada_por_bu === "ACEPTADA" ? new Date(registro.fecha_entrega_compras).toLocaleDateString('es-MX') :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
             <label style={{width:'1%'}}></label>
             <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>      
@@ -271,15 +285,15 @@ if (view2){
 onPaste={(e) => {
   const textoPegado = e.clipboardData.getData('text');
   const textoLimpio = textoPegado.replace(/[^\d.,]/g, '');
-  const regex = /^(\d{1,3}(,\d{3})*|\d+)(\.\d{1,2})?$/;
+const regex = /^\d+(\.\d{1,4})?$/;
 
   if (regex.test(textoLimpio)) {
     const numero = textoLimpio.replace(/,/g, '');
     ActualizarRegistro(e, numero);
     e.preventDefault();
   } else {
-    e.preventDefault();}}}  name="montopi" style={{ borderStyle:'groove', width:'100%', textAlign:"center" }} value={Number(registro.montopi).toLocaleString("es-MX", {
-    style: "currency",currency: "MXN"})} ></Input></label>
+    e.preventDefault();}}}  name="montopi" style={{ borderStyle:'groove', width:'100%', textAlign:"center" }} value={registro.montopi ? `$ ${Number(registro.montopi).toLocaleString("es-MX",{minimumFractionDigits:0,maximumFractionDigits:4})}` : ""}
+     ></Input></label>
 
               <label style={{marginLeft:"12px", display:'inline-block', width:'6%'}}  for='moneda'> MONEDA 
                 <Input readOnly name="moneda" style={{borderStyle:'groove', width:'100%' }} value={registro.moneda}></Input></label>
@@ -293,9 +307,8 @@ onPaste={(e) => {
       FECHA MATRICES
       <Input readOnly type= {(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? "text" : "date" : "text"} name="fecha_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={(x === "Correccion" || x === "segunda")  ? registro.fecha_matrices === null ? null : new Date(registro.fecha_matrices).toISOString().split('T')[0] : registro.fecha_matrices} /> 
       </label></>)}
-      
                   <label style={{marginLeft:"2%", display: 'inline-block', width: '15%' }} htmlFor='liberada_por_matrices'>LIBERADA POR MATRICES
-                  <Input readOnly  name="liberada_por_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={registro.liberada_por_matrices } /></label>
+                  <Input readOnly  name="liberada_por_matrices" style={{ borderStyle: 'groove', width: '100%' }}  value={registro?.liberada_por_matrices ?? ''} /></label>
 
                   <label style={{marginLeft:"2%", display: 'inline-block', width: '25%' }} htmlFor='liberacion_de_matr_con_sello'>LIBERACION DE MATRICES CON SELLO
                   <Input readOnly  name="liberacion_de_matr_con_sello" style={{ borderStyle: 'groove', width: '100%' }}  value={registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello } /></label>
@@ -425,23 +438,26 @@ onPaste={(e) => {
                   </select></label>
                   <hr></hr>
             <label style={{ marginLeft:"12px", display:'inline-block', width:'12%'}} for='bu'> LIBERADA POR BU 
-                <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_bu" name="liberada_por_bu" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_bu} >
+            <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_bu" name="liberada_por_bu" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_bu} >
                         <option > </option> 
                         <option >ACEPTADA</option> 
                         <option >RECHAZADA</option> 
                   </select></label>
             <label  style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_bu'> FECHA BU
-                <Input style={{borderStyle:'groove' , width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_bu" value={registro.fecha_bu?.split('T')[0]}></Input></label>      
+              <br style={{display:(registro.fecha_bu === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
+              <input disabled style={{display:(registro.fecha_bu === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
+                <Input style={{borderStyle:'groove' , width:"95%" , display:(registro.fecha_bu === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_bu" value={registro.fecha_bu === null ? null : registro.fecha_bu?.split('T')[0]}></Input></label>      
             <label hidden={x !== "Correccion" ? true : false  } style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR PLANEACION 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_planeacion" name="liberada_por_planeacion" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_planeacion} >
                         <option > </option> 
                         <option >ACEPTADA</option> 
                         <option >RECHAZADA</option> 
                   </select></label>
-
             <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_planeacion'> FECHA PLANEACION
-                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_planeacion" value={registro.fecha_planeacion?.split('T')[0]}></Input></label>      
+              <br hidden={x !== "Correccion" ? true : false  } style={{display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
+              <input hidden={x !== "Correccion" ? true : false  } disabled style={{display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
 
+                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_planeacion === "2000-01-01T00:00:00") ? 'none' : '' }} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_planeacion" value={registro.fecha_planeacion === null ? null : registro.fecha_planeacion?.split('T')[0]}></Input></label>      
             <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR AUDITORIA 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_auditoria" name="liberada_por_auditoria" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_auditoria} >
                         <option > </option> 
@@ -450,7 +466,10 @@ onPaste={(e) => {
                   </select></label>
 
             <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_auditoria'> FECHA AUDITORIA
-                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_auditoria" value={registro.fecha_auditoria?.split('T')[0]}></Input></label>      
+              <br hidden={x !== "Correccion" ? true : false  } style={{display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? '' : 'none' }}></br>
+              <input hidden={x !== "Correccion" ? true : false  } disabled style={{display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
+
+                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_auditoria === "2000-01-01T00:00:00") ? 'none' : ''}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_auditoria" value={registro.fecha_auditoria === null ? null : registro.fecha_auditoria?.split('T')[0]}></Input></label>      
 
             <label hidden={x !== "Correccion" ? true : false  }  style={{ marginLeft:"12px", display:'inline-block', width:'11%'}} for='bu'> LIBERADA POR SAP 
                 <select onChange={(a)=>{ActualizarRegistro(a)}}  id="liberada_por_sap" name="liberada_por_sap" style={{borderStyle:'groove', width:'100%' }} defaultValue={registro.liberada_por_sap} >
@@ -460,7 +479,10 @@ onPaste={(e) => {
                   </select></label>
 
             <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_sap'> FECHA SAP
-                <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_sap" value={registro.fecha_sap?.split('T')[0]}></Input></label>      
+              <br hidden={x !== "Correccion" ? true : false  } style={{display:(registro.fecha_sap=== "2000-01-01T00:00:00") ? '' : 'none' }}></br>
+              <input hidden={x !== "Correccion" ? true : false  } disabled style={{display:(registro.fecha_sap=== "2000-01-01T00:00:00") ? '' : 'none' }} value="N/A" />
+
+                <Input style={{borderStyle:'groove', width:"95%" , display:(registro.fecha_sap=== "2000-01-01T00:00:00") ? 'none' : ''}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="fecha_sap" value={registro.fecha_sap === null ? null : registro.fecha_sap?.split('T')[0]}></Input></label>      
 
             <label hidden={x !== "Correccion" ? true : false  }   style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='fecha_sap'> ACUSE
                 <Input style={{borderStyle:'groove', width:"95%"}} onChange={(a)=>{ActualizarRegistro(a)}}  name="acuse" value={registro.acuse}></Input></label>      

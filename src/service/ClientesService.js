@@ -94,12 +94,55 @@ class Clienteservice {
     return axios.post(documentos_AUDIT + "/historialsoc/generarHistSoc/", registro)
   }
 
-    getdocumentos(){
-    return axios.get(documentos_AUDIT + "/documentos/api/archivos/")
+  getdocumentos(){
+    return axios.get(documentos_AUDIT + "/documentos/carpatasini")
   }
+
+  getSub_folders_documentos(){
+    return axios.get(documentos_AUDIT + "/documentos/folders")
+  }
+  actualizarFechayDura(id , docs){
+    return axios.put(documentos_AUDIT + "/documentos/fechaydur/" + id , docs)
+  }
+  getallLink(){
+    return axios.get(documentos_AUDIT + "/documentos/archivos/full" )
+  }
+  getarchivos(id_folders){
+    return axios.get(documentos_AUDIT + "/documentos/archivos/" + id_folders)
+  }
+
+  postNuevoDoc(nuevoDoc){
+    return axios.post(documentos_AUDIT + "/documentos/archivos/nuevoDoc" , nuevoDoc)
+  }
+
+  putDocumentos (idDoc, documento){
+    return axios.put(documentos_AUDIT + "/documentos/archivos/nuevoDoc/" + idDoc , documento)
+  }
+
+  elimDocumentos (idDoc){
+    return axios.delete(documentos_AUDIT + "/documentos/archivos/elimin/" + idDoc )
+  }
+
   getSocHistorial(){
     return axios.get(Clientes_BASE_REST_API + "/soccompleto/")
   }
+  getCondMatrices(folio , nooc){
+  const url = Clientes_BASE_REST_API + "/condmatrices/" + folio + "/" + nooc;
+  return axios.get(url);  
+}
+gethistSocFull(){
+  return axios.get(documentos_AUDIT + "/historialsoc/histsoccompleto/")
+}
+
+traeUsuariosSesiones (){
+  return axios.get(documentos_AUDIT + "/registrousers/consultar/")
+}
+postregistroSesion(registroaSesion){
+  return axios.post(documentos_AUDIT + "/registrousers/registrarSesion" , registroaSesion)
+}
+eliminarUserSesion(id){
+  return axios.delete(documentos_AUDIT + "/registrousers/eliminarUser/" + id)
+}
 
 }
 export default new Clienteservice();
