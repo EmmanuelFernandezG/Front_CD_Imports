@@ -33,14 +33,14 @@ export const obtenerEstadoEnvio = (id,row ,value ) => {
   ];
   if (!["R", "PPU", "MS", "X", "N/A"].includes(row.liberada_por_matrices)) {
     if (grupoE.includes(row.unidad_de_negocio)) {
-      return "COMPRAS/PLANEACION";
+      return "COMPRAS";
     } else {
       return "COMPRAS";
     }
   }
   if (row.liberada_por_bu !== "ACEPTADA") {
     if (grupoE.includes(row.unidad_de_negocio)) {
-      return "COMPRAS/PLANEACION";
+      return "COMPRAS";
     } else {
       return "COMPRAS";
     }

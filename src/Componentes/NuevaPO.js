@@ -132,11 +132,9 @@ ClientesService.getnuevapoNA(sub).then((response) => {
  if (a.target.type === "date" && !["fecha_sap", "fecha_auditoria", "fecha_planeacion" ,"fecha_bu"].includes(a.target.name)){
      valor = new Date(a.target.value).toISOString().split('T')[0] + "T00:00:00"; 
  }
-  if (
-    a.target.name === "segunda" &&
-    (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")
-  ) {
-    nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"}
+  if (a.target.name === "segunda" &&  (registro.liberada_por_matrices === "X" || registro.liberada_por_matrices === "MS")) {
+    nuevoRegistro["liberacion_de_matr_con_sello"] = a.target.value === "SI"  ? "PI ANTERIOR LIBERADA CON SELLO" : "PI LIBERADA CON SELLO"
+    }
   if (a.target.name === "montopi") {
     nuevoRegistro[a.target.name] = nume;
   } else {
@@ -239,7 +237,7 @@ if (view2){
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
-          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={registro.liberada_por_bu === "ACEPTADA" ? new Date(registro.fecha_entrega_compras).toLocaleDateString('es-MX') :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
+          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
             <label style={{width:'1%'}}></label>
             <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>      
