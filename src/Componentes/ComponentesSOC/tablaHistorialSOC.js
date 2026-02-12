@@ -58,9 +58,7 @@ export default function TablaHistorialSOC({ datos }) {
     { field: 'fecha_de_emisionoc', headerName: 'Fecha de Emisión O.C.', width: 120 , valueFormatter: (params) => {
         if (!params) return '-'; 
         const date = new Date(params).toLocaleDateString("es-MX", opciones);
-        return date === null ? '-' : date;
-
-      }, headerClassName: "gris"},
+        return date === null ? '-' : date; }, headerClassName: "gris"},
     { field: 'rea', headerName: 'R/EA', width: 90, headerClassName: "gris"},
     { field: 'fecha_de_emisionrea', headerName: 'Fecha de Emisión R/EA', width: 120 , valueFormatter: (params) => {
         if (!params) return '-'; 

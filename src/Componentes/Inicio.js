@@ -120,7 +120,6 @@ return (
 }else if(perfillocalusuario === "Documentos" && usuariol === "Ariel"){
   return (
   <div>
-      {console.log(sumasneg)}
   </div>
   )
 }

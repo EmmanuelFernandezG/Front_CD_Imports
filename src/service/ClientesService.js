@@ -143,6 +143,12 @@ postregistroSesion(registroaSesion){
 eliminarUserSesion(id){
   return axios.delete(documentos_AUDIT + "/registrousers/eliminarUser/" + id)
 }
+getcontactosall(){
+  return axios.get(Clientes_BASE_REST_API + "/contactos/all")
+}
 
+getproveedoresall (){
+  return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
+}
 }
 export default new Clienteservice();

@@ -17,7 +17,7 @@ function NuevaPO() {
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric" };
 
   const llenos = [registro.segunda, registro.precio, registro.matriz, registro.datos_fiscales, registro.term_de_pago, registro.dir_de_prov, registro.tax_id, registro.incoterm, registro.qty, registro.etd, registro.etd_pi, registro.add_elim_item, registro.peso_vol, 
-      registro.validacion_pod_vs_pi, registro.condicion_de_matrices, registro.compartida , registro.trial, registro.fecha_de_recepcion
+      registro.validacion_pod_vs_pi, registro.condicion_de_matrices, registro.compartida , registro.trial, registro.fecha_de_recepcion, registro.fecha_entrega_compras
     ];
   
    const todosLlenos = llenos.every(  campo => typeof campo === 'string' && campo.trim() !== '');
@@ -34,23 +34,25 @@ function NuevaPO() {
               registro.fecha_matrices = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00`;       
              }    
                    if(registro.id === undefined){
-                        ClientesService.createClientes(registro).then((response) =>{
-                              setview(false)
-                        }).catch((error)=>{
-                              console.log(error)
-                        })
-                       GeneraHistorial("nuevo", registrohist , registroanterior)
+                      registro.liberacion_de_matr_con_sello = registro.liberacion_de_matr_con_sello === undefined ? "-" : registro.liberacion_de_matr_con_sello
+                         ClientesService.createClientes(registro).then((response) =>{
+                               setview(false)
+                         }).catch((error)=>{
+                               console.log(error)
+                         })
+                        //  GeneraHistorial("nuevo", registrohist , registroanterior)
                  }else{
-                    ClientesService.updateClientes(registro.id, registro).then((response) =>{
-                          setview(false)
-                    }).catch((error)=>{
-                          console.log(error)
-                    })
-                      GeneraHistorial(registro.id, registrohist , registroanterior)
+                     ClientesService.updateClientes(registro.id, registro).then((response) =>{
+                           setview(false)
+                     }).catch((error)=>{
+                           console.log(error)
+                     })
+                      //  GeneraHistorial(registro.id, registrohist , registroanterior)
      }
         } }else{
                alert("Favor de llenar todos los Campos")
          }
+         setx()
 } 
     const handleKeyPress = (event) => {
       if(event.key === 'Enter'){
@@ -98,6 +100,7 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   const cerrar = ()=>{
     setsub();
     setview(false);
+    setx()
   };
   
  const ActualizarRegistro = (a, nume) => {
@@ -105,9 +108,9 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   if (a.target.name === "unidad_de_negocio") {
       ClientesService.getcombProv(registro.no_de_proveedor + a.target.value).then((response)=>{
           setRegistro((prev) => ({...prev, 
-            ["gerente_de_compras"]: response.data.gte_Responsable_BU,
-            ["confirmador"]: response.data.planeador_planeacion,
-            ["validaciones_extraordinarias"]: response.data.tc_MP
+            ["gerente_de_compras"]: response.data?.gte_Responsable_BU,
+            ["confirmador"]: response.data?.planeador_planeacion,
+            ["validaciones_extraordinarias"]: response.data?.tc_MP
           } ))
       }).catch((error)=>{
         console.log(error)
@@ -140,19 +143,20 @@ ClientesService.getnuevapoNA(sub).then((response) => {
   } else {
     nuevoRegistro[a.target.name] = valor;
     const hoy = new Date().toISOString().split("T")[0] + "T00:00";
-    nuevoRegistro["fecha_inicio"] = hoy;
+    const fecha = new Date();
+const fechaMexico = new Date().toLocaleString("sv-SE", {
+  timeZone: "America/Mexico_City"
+});
+const fechaISOlocal = fechaMexico.replace(" ", "T");
+    nuevoRegistro["fecha_inicio"] = fechaISOlocal;
     nuevoRegistro["fecha_revision"] = hoy;
  if (BUs_Piloto(nuevoRegistro.fecha_entrega_compras, nuevoRegistro) === false) {
   if (nuevoRegistro.liberada_por_bu === "ACEPTADA") {
     // nuevoRegistro["fecha_entrega_compras"] = null; linea anterior 
-    nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
-  } else if (
-    nuevoRegistro.fecha_entrega_compras === null ||
-    nuevoRegistro.fecha_entrega_compras === undefined
-  ) {
-    nuevoRegistro["fecha_entrega_compras"] = hoy;
-  } else {
-    nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
+    // nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
+  } 
+   else {
+    // nuevoRegistro["fecha_entrega_compras"] = registro.fecha_entrega_compras;
   }
 }
 setRegistro(nuevoRegistro);
@@ -211,9 +215,34 @@ setRegistro(nuevoRegistro);
 });
     };
 
-      const fechaFormateada = (fecha) => { 
-           return  registro.length !== 0   ? new Date(fecha).toISOString().split('T')[0]   : ''; 
-      }
+const fechaFormateada = (fecha) => { 
+    if (fecha !== undefined){
+        return  registro.length !== 0   ? new Date(fecha).toISOString().split('T')[0] + "T00:00:00"   : ''; 
+    }
+}
+const fechaFormateadaObj = (fecha) => { 
+    if (fecha !== undefined){
+        return  registro.length !== 0   ? new Date(fecha).toISOString().split('T')[0]   : ''; 
+    }
+}
+const fechaEntregaCompras =(a)=>{
+           if (a.target.type === "text"){
+             setRegistro((prev) => ({...prev, 
+             [a.target.name]: fechaFormateada(new Date()),
+           }))
+           }else {
+             const opcion = window.confirm("¿Deseas usar la fecha seleccionada?\nPresiona 'Cancelar' para usar N/A");
+             let valor = ""
+               valor = a.target.value === "" ? null : opcion ? new Date(a.target.value).toISOString().split('T')[0] + "T00:00:00" : "2000-01-01T00:00:00"
+               if (opcion){
+
+              }else {
+                    
+            } 
+             setRegistro((prev) => ({...prev, 
+             [a.target.name]: valor,
+           }))
+           }}      
 if (view2){
       return(
       <div style={{padding:'10px'}}> 
@@ -237,7 +266,10 @@ if (view2){
             <label style={{marginLeft:"12px"}} for="fecha_inicio" >FECHA INICIO</label> 
           <input readOnly type="date" name="fecha_inicio" value={new Date().toISOString().split('T')[0]}/>
             <label hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)}  style={{marginLeft:"12px"}} for="fecha_entrega_compras" >FECHA ENTREGA A COMPRAS</label> 
-          <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "date"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : new Date(registro.fecha_entrega_compras).toISOString().split('T')[0]}/>
+          {/* poner nueva funcionalidad que actualice el estado setRegistro */}
+          <input hidden={(registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras !== "2000-01-01T00:00:00" ) ? false : true} onChange={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="date" name="fecha_entrega_compras" value={fechaFormateadaObj(registro.fecha_entrega_compras)} />
+          <input hidden={registro.fecha_entrega_compras === "2000-01-01T00:00:00" ? false : true} onClick={(a)=>{fechaEntregaCompras(a)}} style={{width:"10%"}}  type="text" value="N/A" name="fecha_entrega_compras"/>
+          {/* <input readOnly hidden={BUs_Piloto(registro.fecha_entrega_compras, registro)} style={{width:"10%"}} type={registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION"  ? "text" : (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? "date" : "text"} name="fecha_entrega_compras"  value={(registro.liberada_por_bu === "ACEPTADA" && x === undefined && obtenerEstadoEnvio(registro.fecha_area_destino, registro) ==="PLANEACION") ? "N/A" :  (registro.fecha_entrega_compras === undefined || registro.fecha_entrega_compras === null) ? new Date().toISOString().split('T')[0] : "N/A" }/> */}
             <button  onClick={()=>{crearRegistro()}} style={{ padding:'7px', color:'white', backgroundColor:'green', borderRadius:"10%" , marginLeft: BUs_Piloto(registro.fecha_entrega_compras, registro) === false ? "7%": "22%"}}>Guardar</button>
             <label style={{width:'1%'}}></label>
             <button onClick={()=>{cerrar()}} style={{ padding:'7px', color:'white', backgroundColor:'red', borderRadius:"10%"}}>Cancelar</button>      
@@ -283,7 +315,8 @@ if (view2){
 onPaste={(e) => {
   const textoPegado = e.clipboardData.getData('text');
   const textoLimpio = textoPegado.replace(/[^\d.,]/g, '');
-const regex = /^\d+(\.\d{1,4})?$/;
+// const regex = /^\d+(\.\d{1,4})?$/;
+const regex = /^\d{1,3}(,\d{3})*(\.\d{1,4})?$|^\d+(\.\d{1,4})?$/;
 
   if (regex.test(textoLimpio)) {
     const numero = textoLimpio.replace(/,/g, '');
@@ -380,7 +413,7 @@ const regex = /^\d+(\.\d{1,4})?$/;
                         <option>MAL</option>
                   </select></label>
             <label style={{marginLeft:"18px", display:'inline-block', width:'10%'}}  for='etdf'> ETD PO 
-                <Input readOnly name="etd_po" type="date" style={{borderStyle:'groove', width:'100%' }} value={fechaFormateada(registro.etd_po)}></Input></label>
+                <Input readOnly name="etd_po" type="date" style={{borderStyle:'groove', width:'100%' }} value={fechaFormateadaObj(registro.etd_po)}></Input></label>
             <label style={{marginLeft:"18px", display:'inline-block', width:'12%'}}  for='etdf'> ETD PI
                 <Input style={{borderStyle:'groove'}} onChange={(a)=>{ActualizarRegistro(a)}} type="date" name="etd_pi" value={registro.etd_pi?.split('T')[0]}></Input></label>
 

@@ -283,14 +283,13 @@ LiberadaPorMatrices(updatedRow).then((libMatr) => {
       field: "fecha_inicio",
       headerName: "FECHA",
       width: 100,
-      type: "date",
+      type: "dateTime",
       editable: false,
       headerClassName: "gris",
-      valueFormatter: (params) => {
-        const date = new Date(params).toLocaleDateString("es-MX", opciones);
-        return date;
-      },
-    },
+valueGetter: (params) =>
+  params ? new Date(params.replace(" ", "T")) : null,
+
+},
     {
       field: "folio_tt",
       headerName: "FOLIO TT",
@@ -916,21 +915,14 @@ renderEditCell: (params) => (
       type: "singleSelect",
       valueOptions: [new Date(Date()+1).toLocaleDateString("es-MX", opciones)],
       valueFormatter: (params) => {
-  return params === null
-    ? "N/A"
-    : params.includes("T")
-      ? (() => {
-          const [yyyy, mm, dd] = params.split("T")[0].split("-");
-          const fecha = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-          fecha.setDate(fecha.getDate() );
-          return fecha.toLocaleDateString("es-MX", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-          });
-        })()
-      : params;
-},
+        if (params === null) {
+          const date = "";
+          return date;
+        } else {
+          const date = new Date(params).toLocaleDateString("es-MX", opciones);
+          return date ==="01/01/2000" ? "N/A" : date;
+        }
+      },
     },
   ];
 

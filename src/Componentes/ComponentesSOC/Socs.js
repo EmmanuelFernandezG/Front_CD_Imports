@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
 import { responsiveFontSizes, Stack } from '@mui/material';
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
 import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
+import LogsControlDoc from './LogsControlDoc';
 
 function Socs() {
-    const [sololectura, setsololectura] = useState(true)
+    const [sololectura, setsololectura] = useState(true);
+    const [contenido, setcontenido] = useState({});
+    const [allContactos,setallContactos] = useState({});
+    const [allproveedores,setallproveedores] = useState({});
+    const [nuevatabla, setnuevatabla] = useState({})
     const [inicial, setinicial] = useState(true)
     const[popi, setpopi] = useState()
     const [visibilidadD, setvisibilidadD] = useState(false);
+    const [cargavis, setcargavis] = useState(true);
     const [tipoOb, settipoOb] = useState(false);
     const [registro,setregistro] = useState({});
     const [Soc,setSoc] = useState({});
@@ -22,7 +28,14 @@ function Socs() {
     const [historialSOC , sethistorialSOC] = useState([]);
     const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({})
   const [visibilidadSOC,setvisibilidadSOC] = useState(true)    
+  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true)    
+  const usuarioLocal = localStorage.getItem("username");
 
+    useEffect (()=>{
+      listarhistoriaSoc();
+      proveedoresall();
+      contactosall();
+    },[])
   const GetSocR = () => {
       setLoading(true)
       setvisibilidadSOC(true)
@@ -50,8 +63,7 @@ function Socs() {
                     setregistro({ ...registro, nooc: popi })
                       }else if (popi.startsWith("8") || popi.startsWith("7")){
                     setregistro({ ...registro, foliott: popi })
-                }
-              
+                } 
               setregistro(prev => ({
                 ...prev,
                 status_problema: "- - - - - - - - -",
@@ -75,7 +87,8 @@ function Socs() {
         ["usuario"] : localStorage.getItem('username')
       } )
     }
-    console.log(RegistroHistorialSoc)
+
+
     const listarhistoriaSoc = () =>{
       setvisibilidadD(true);
       setinicial(true)
@@ -93,6 +106,21 @@ function Socs() {
         console.log(errr)
       })
     }
+    const proveedoresall =()=>{
+      ClientesService.getproveedoresall().then((response)=>{
+        setallproveedores(response.data)
+      }).catch((error)=>{
+        console.log(error)
+      })
+    }
+    const contactosall =()=>{
+      ClientesService.getcontactosall().then((response)=>{
+        setallContactos(response.data)
+      }).catch((error)=>{
+        console.log(error)
+      })
+    }
+
     const Guardar =  ()=>{
         if (tipoOb){
                ClientesService.postNuevoSOC(registro).then((response)=>{
@@ -161,6 +189,13 @@ const agregarfecharecibo = ()=>{
         window.location.reload()
     }
 
+   const consultarlog = () => {
+      setvisibilidadSOC(true);
+      setvisibilidadLOGs(false);
+  const nvorango = Object.values(Soc)
+    .filter(item => item.asistentepos === usuarioLocal);
+      setnuevatabla(nvorango);
+};
     const guardarHistorialSoc = ()=>{
        ClientesService.postHistorialSOC(RegistroHistorialSoc).then((response)=>{
            sethistorialSOC((prev) => [...prev, response.data]);
@@ -177,7 +212,52 @@ const anio = String(hoy.getFullYear()).slice(-2); // últimos 2 dígitos
 const fechaFormateada = `${dia}.${mes}.${anio}`;
 return  fechaFormateada;
 }
+  const fileRef = useRef(null);
+  const [fileName, setFileName] = useState("");
+  const [content, setContent] = useState({});
+  const handleClick = () => {
+    fileRef.current.click();
+  };
 
+  const txtToJson = (text) => {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split('\t').map(h => h.trim());
+  const data = lines.slice(1).map(line => {
+    const values = line.split('\t');
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = values[index]?.trim() || '';
+    });
+    return obj;
+  });
+  return data;
+};
+  const cargarbatch = ()=>{
+       var pass = false
+     content.forEach(element => {
+       ClientesService.postNuevoSOC(element).then(()=>{
+            setregistro({})
+            pass = true
+          }).catch((error)=>{
+            console.log(error)
+          })
+     });
+     if(pass){
+         alert("Registros Guardados"  )
+   }
+};
+  const handleChange = (e) => {
+    const file = e.target.files[0];
+  setFileName(file.name);
+  const reader = new FileReader();
+  reader.onload = (event) => {
+     const text = event.target.result ;
+     const json = txtToJson(text); 
+      setContent(json); 
+  };
+  reader.readAsText(file, "ISO-8859-1");
+  setcargavis(false)
+};
 if (loading) {
   return (
     <div style={{
@@ -205,6 +285,19 @@ if (loading) {
         <input type='number' onChange={(e)=>{setpopi(e.target.value)}} value={popi} onKeyPress={handleKeyPress}  ></input>
         <button  style={{marginLeft:"1%"}} className='btn btn-success' onClick={()=>{popi === undefined ? alert("Colocar PO Valida") : GetSocR()  }} >Buscar PO o PI</button>
         <button  style={{marginLeft:"1%"}} className='btn btn-danger' onClick={()=>{listarhistoriaSoc()}} >Tabla SOC </button>
+    <div style={{marginLeft:'1%', alignContent:'center', textAlign: "center"}}>
+      <button type="button" className='btn btn-warning' onClick={handleClick}>
+        Seleccionar archivo
+      </button>
+      <span style={{ marginLeft: 10 }}>{fileName}</span>
+      <input
+        type="file"
+        ref={fileRef}
+        onChange={handleChange}
+        hidden
+      />
+    <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
+    </div>
           <ExportHistorial   historialfull={historialfull}/ > 
     </Stack>
 <hr></hr>
@@ -464,6 +557,10 @@ if (loading) {
 <div hidden={visibilidadSOC} >
 <TablaHistorialSOC datos={Soc} />
 </div>    
+<div hidden={visibilidadLOGs} >
+<LogsControlDoc  proveedores={allproveedores} contactos={allContactos} logs={nuevatabla} />
+</div>    
+
     </div>
   )
 }

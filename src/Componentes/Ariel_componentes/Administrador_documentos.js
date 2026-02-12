@@ -88,7 +88,6 @@ const Administrador_Documentos = () => {
   const selected = a.target.options[a.target.selectedIndex];
           areas.forEach(element => {
             if (parseInt(selected.dataset.idarriba) === element.id){
-              console.log(element)
                 setareaestado(element);
                   setarchEdorNew((prev) => ({
               ...prev, 

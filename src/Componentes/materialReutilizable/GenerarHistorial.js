@@ -30,13 +30,12 @@ const GeneraHistorial = (e, registro, registroanterior) => {
           registro["fecha_de_envio"] = 
             value === "" ? "" : new Date().toISOString().split('T')[0] + "T00:00:00";
             }else if(e === "masivo"){
-                console.log("llega4")
 
             }
             else{
               registro[key.replace("liberada_por_", "fecha_")] = (registro[key] === "RECHAZADA" || registro[key] === "ACEPTADA") ? registro[key.replace("liberada_por_", "fecha_")]  : null ;
         }
-         }
+         
      ClientesService.updatematrizcd(registro.id, registro).then(() => {
                 // funcionfiltro();
              })
@@ -44,6 +43,7 @@ const GeneraHistorial = (e, registro, registroanterior) => {
                console.log(error);
              });
       }
+    }
    if (!key.toLowerCase().includes("fecha_inicio") && !key.toLowerCase().includes("fecha_revision")) {
     const vueltaJSON = {
       dato: e === "nuevo" ? "NUEVO REGISTRO" : key,
@@ -53,10 +53,11 @@ const GeneraHistorial = (e, registro, registroanterior) => {
       po: PO,
       fechaactualizacion: e === "nuevo" ? "" : new Date().toISOString()
     };
-    if (e !== "nuevo") { 
+    if (e !== "nuevo") {
      ClientesService.postHistorial(vueltaJSON).then((response)=>{
 
      }).catch((error)=>{
+
        console.log(error)
      })
      }
@@ -74,7 +75,8 @@ const GeneraHistorial = (e, registro, registroanterior) => {
      ClientesService.postHistorial(vueltaJSON).then((response)=>{
 
      }).catch((error)=>{
-       console.log(error)
+ 
+      console.log(error)
      })
      }
 };
