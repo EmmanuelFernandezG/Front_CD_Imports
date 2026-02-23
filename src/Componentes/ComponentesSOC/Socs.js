@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import ClientesService from '../../service/ClientesService';
-import { responsiveFontSizes, Stack } from '@mui/material';
+import { Stack } from '@mui/material';
 import { BUs , colocador ,ordenador } from '../materialReutilizable/RangosReusables';
 import CircularProgress from "@mui/material/CircularProgress";
 import TablaHistorialSOC from './tablaHistorialSOC';
@@ -8,6 +8,7 @@ import { ExportHistorial } from '../materialReutilizable/ExportHistorial';
 import LogsControlDoc from './LogsControlDoc';
 
 function Socs() {
+    const [visibBach, setvisibBach] = useState(false);
     const [sololectura, setsololectura] = useState(true);
     const [contenido, setcontenido] = useState({});
     const [allContactos,setallContactos] = useState({});
@@ -74,6 +75,7 @@ function Socs() {
                         setLoading(false)
                 console.log(error)
             })
+            setvisibBach(true);
     }
     const crearhistSoc = (e) =>{
         const d = new Date();
@@ -105,6 +107,7 @@ function Socs() {
       }).catch((errr)=>{
         console.log(errr)
       })
+      setvisibBach(false);
     }
     const proveedoresall =()=>{
       ClientesService.getproveedoresall().then((response)=>{
@@ -232,20 +235,35 @@ return  fechaFormateada;
   });
   return data;
 };
-  const cargarbatch = ()=>{
-       var pass = false
-     content.forEach(element => {
-       ClientesService.postNuevoSOC(element).then(()=>{
-            setregistro({})
-            pass = true
-          }).catch((error)=>{
-            console.log(error)
-          })
-     });
-     if(pass){
-         alert("Registros Guardados"  )
-   }
+  const cargarbatch = async () => {
+    let aceptados = "";
+    let rechazados = "";
+    for (const element of content) {
+        try {
+            const response = await ClientesService.postNuevoSOC(element);
+            console.log(response.data)
+            if (response.data.aceptados !== "undefined") {
+              console.log("Entra")
+                 aceptados += "\n" + response.data.exitosos;
+            }
+            if (response.data?.rechazados) {
+                rechazados += "\n" + response.data.rechazados;
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    const resultado = 
+      "✅ CARGADOS:\n" + (aceptados || "Ninguno") +
+      "\n\n❌ RECHAZADOS:\n" + (rechazados || "Ninguno");
+    const nuevaVentana = window.open("", "_blank");
+    nuevaVentana.document.write("<pre>" + resultado + "</pre>");
+
+setregistro({});
+        setcargavis(true);
+      setFileName("");
 };
+
   const handleChange = (e) => {
     const file = e.target.files[0];
   setFileName(file.name);
@@ -285,9 +303,12 @@ if (loading) {
         <input type='number' onChange={(e)=>{setpopi(e.target.value)}} value={popi} onKeyPress={handleKeyPress}  ></input>
         <button  style={{marginLeft:"1%"}} className='btn btn-success' onClick={()=>{popi === undefined ? alert("Colocar PO Valida") : GetSocR()  }} >Buscar PO o PI</button>
         <button  style={{marginLeft:"1%"}} className='btn btn-danger' onClick={()=>{listarhistoriaSoc()}} >Tabla SOC </button>
-    <div style={{marginLeft:'1%', alignContent:'center', textAlign: "center"}}>
-      <button type="button" className='btn btn-warning' onClick={handleClick}>
-        Seleccionar archivo
+          <ExportHistorial   historialfull={historialfull}/ > 
+    </Stack>
+<hr></hr>
+  <div style={{marginLeft:'10%', alignContent:'center', textAlign: "center" , height:'1px'}}>
+      <button hidden={visibBach} type="button" className='btn btn-warning' onClick={handleClick}>
+        Seleccionar  Batch
       </button>
       <span style={{ marginLeft: 10 }}>{fileName}</span>
       <input
@@ -298,9 +319,7 @@ if (loading) {
       />
     <button hidden={cargavis} onClick={()=>{ cargarbatch()}}> Cargar </button>
     </div>
-          <ExportHistorial   historialfull={historialfull}/ > 
-    </Stack>
-<hr></hr>
+
 <div hidden={inicial} className="border border-dark-subtle p-3 bg-light rounded shadow-sm">
   {/*  ocultable desde aqiu    */}
   <Stack direction="row" >

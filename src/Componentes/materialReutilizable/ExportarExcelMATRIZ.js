@@ -36,7 +36,6 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Datos");
     const hoy = new Date();
-
     ws.getCell("A1").value = `Fecha exportación: ${hoy.toLocaleDateString()}`;
     ws.getCell("A1").font = { size: 14, bold: true };
     const header = ws.addRow(columns.map((c) => c.headerName ?? c.field));
@@ -51,20 +50,16 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
       const B = new Date(b[campoFecha]);
       return (isNaN(A) || isNaN(B)) ? 0 : A - B;
     });
-
     datos.forEach((r) => {
       const fila = ws.addRow(
         columns.map(({ field }) => {
           const val = r[field];
-
           if (esCampoFecha(field)) return parsearFecha(val);
-
           return field.toLowerCase().includes("monto")
             ? parseFloat(val || 0)
             : val ?? "";
         })
       );
-
       fila.eachCell((cell, idx) => {
         const col = columns[idx - 1];
         if (esCampoFecha(col.field) && cell.value instanceof Date) {
@@ -72,16 +67,12 @@ export const ExportarExcelMATRIZ = ({ columns = [], rows = [], fuente = "" }) =>
         }
       });
     });
-
     ws.columns.forEach((col, i) => (col.width = anchos[i] ?? 15));
-
     const nombre = rango.inicio
       ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
       : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
-
     saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
   };
-
   return (
     <div className="d-flex gap-2 flex-wrap" style={{ border: "dotted grey 1px" }}>
       {["inicio", "fin"].map((t) => (

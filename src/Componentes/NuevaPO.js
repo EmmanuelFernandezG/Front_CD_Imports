@@ -24,7 +24,7 @@ function NuevaPO() {
    const crearRegistro = ()=>{ 
        setRegistrohist(registro)
         if(todosLlenos || registro.segunda === "PF") {
-              if( registro.montopi === ''){
+              if( (registro.montopi === '' || registro.montopi === null)  && registro.segunda !== "PF"){
                alert("Favor de llenar Monto")
               }else{
             const value = obtenerEstadoEnvio(null, registro); 

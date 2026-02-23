@@ -10,7 +10,6 @@ const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocument
 // const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
 
-
 class Clienteservice {
   getAllClientes() {
     return axios.get(Clientes_BASE_REST_API + "/matrizcd");
@@ -44,7 +43,8 @@ class Clienteservice {
     return axios.get(matrizcd_BASE_REST_API);
   }
   updatematrizcd(MatrizId, RegistroMatriz) {
-    return axios.put(matrizcd_BASE_REST_API + "/" + MatrizId, RegistroMatriz);
+    console.log(RegistroMatriz)
+     return axios.put(matrizcd_BASE_REST_API + "/" + MatrizId, RegistroMatriz);
   }
   getnuevapo(OrdenC){
     return axios.get(matrizcd_BASE_REST_API + "/nuevapo/" + OrdenC);
@@ -72,7 +72,7 @@ class Clienteservice {
   }
 
   postNuevoSOC(nuevosoc){
-      return axios.post(Clientes_BASE_REST_API + "/seguimientooc/nuevaPO", nuevosoc);
+       return axios.post(Clientes_BASE_REST_API + "/seguimientooc/nuevaPO", [nuevosoc]);
   }
   putNuevoSOC(socID , NuevoSoc){
       return axios.put(Clientes_BASE_REST_API + "/seguimientooc/modPO/" + socID , NuevoSoc)    
