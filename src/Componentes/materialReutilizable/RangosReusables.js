@@ -71,10 +71,10 @@ export const tipos_modif = ["Precio",
 "Adición de línea",
 "Cantidad",
 "Solped",
-"Otro",
 "Término de pago",
 "Eliminación (Con PI)",
-"Molde recuperable"
+"Molde recuperable",
+"Otro"
 ]
 
 export const Orden_Etd_Cur = ["PO PM/TS",

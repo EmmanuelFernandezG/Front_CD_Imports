@@ -451,6 +451,7 @@ function FormatoTrial() {
       const folioABuscar = folioBusqueda;
       if (!folioABuscar.trim()) return;
       ClientesService.getTrialporFolio(folioABuscar).then((response) => {
+        console.log(response.data)
         if (response.data) {
           const registro = response.data;
           let sellosRecuperados = {};
