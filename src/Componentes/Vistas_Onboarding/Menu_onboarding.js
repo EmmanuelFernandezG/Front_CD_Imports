@@ -5,7 +5,7 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
-import image from './herramientasOK.jpg';
+import image from './Test_Herramientas.jpg';
 import { Stack } from 'react-bootstrap';
 import styles from "./Administrador_Documentos.module.css";
 
@@ -25,7 +25,7 @@ function Menu_onboarding() {
     return (
 <div style={{ position: 'relative',marginLeft:'-15%' , width:'130%' , minHeight: '15vh' ,backgroundColor:"#444343" }}>
     <div style={{ position: 'absolute',
-        top: 0, left: 0,width: '100%', height: '100%', opacity: 0.3,backgroundImage: `url(${image})`, backgroundSize: 'cover',
+        top: 0, left: 0,width: '100%', height: '100%', backgroundImage: `url(${image})`, backgroundSize: 'cover',
         backgroundPosition: 'center', backgroundRepeat: 'no-repeat', zIndex: 0 }}    />
     <div style={{ position: 'relative', zIndex: 1 }}>;
         {/* <div  className="dropdown">

@@ -207,9 +207,6 @@ getArancel(){
   return axios.get(documentos_AUDIT+"/actualizarbases/arencelcero")
 }
 
-// getArancel(){
-//   return axios.get(documentos_AUDIT+"/actualizarbases/arancelget")
-// }
 postArancel(){
   return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
 }

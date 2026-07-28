@@ -66,6 +66,17 @@ export const centro=[
   "P5","STUL", "SRTI-DIRECTOS"
 ]
 
+export const cambios = {
+  CAD: 12.5548,
+  CHF: 22.0671,
+  CNY: 2.56082,
+  EUR: 20.1883,
+  GBP: 23.2945,
+  TWD: 0.55235,
+  USD: 17.3213,
+  MXN: 1
+};
+
 export const tipos_modif = ["Precio",
 "Adición item / other item",
 "Adición de línea",
@@ -106,6 +117,7 @@ export const Revisados_Masivo = [
 "POSICIÓN",
 "ETD",
 "CANTIDAD ACTUAL",
+"CANTIDAD NUEVA",
 "No. SOLPED",
 "PRECIO UNITARIO",
 "PRECIO PARCELMOBI",
@@ -114,3 +126,17 @@ export const Revisados_Masivo = [
 "DESCRIPCIÓN (other item)",
 "UM"
 ]
+
+export const other_items = {
+2931: {clave:"Handling Charge",tipo:"string",valor:"SER"} ,
+2932: {clave:"Cajas de Cartón corrugado pagadero",tipo:"lista",valor:["PZAS","SET"]},
+2933: {clave:"Cajas de Cartón liso pagadero",tipo:"lista",valor:["PZAS","SET"]},
+2934: {clave:"Flete indirecto",tipo:"string",valor:"SER"},
+2935: {clave:"Muestras Pagaderas Producto para evaluación pagadera",tipo:"string",valor:""},
+2936: {clave:"Empaque",tipo:"string",valor:"PZAS"},
+2937: {clave:"Otros Cargos ",tipo:"string",valor:"SER"},
+2938: {clave:"Cajas de Cartón corrugado Libre de Cargo",tipo:"lista",valor:["PZAS","SET"]},
+2939: {clave:"Cajas de Cartón liso Libre de Cargo",tipo:"lista",valor:["PZAS","SET"]},
+2940: {clave:"Otros Cargos libres de cargo",tipo:"lista",valor:["SER","PZAS"]},
+2941: {clave:"Producto para evaluación libres de cargo",tipo:"string",valor:""}
+};
