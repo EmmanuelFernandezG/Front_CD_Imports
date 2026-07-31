@@ -6,6 +6,8 @@ import '../../Componentes/button.css'
 import ClientesService from '../../service/ClientesService'
 
 function FormatoRevisados() {
+    const [leerfolio,setleerfolio]= useState([])
+    const [foliorevisado,setfoliorevisado] = useState('');
     const [othersValidos,setothersValidos]= useState(false);
     const [aplicaSN,setaplicaSN] = useState('No');
     const [juntopo,setjuntopo] = useState('No');
@@ -19,7 +21,6 @@ function FormatoRevisados() {
     const [clickcambio,setclickcambio]= useState(true);
     const [clickEA,setclickEA]= useState(true);
     const [clicksidocs, setclicksidocs] = useState(true);
-    const [tabla, settabla] = useState({visible:true , tipotabla:''});
     const [NoSolped,setNoSolped] = useState(true)    
     const [otro,setotro] = useState(true)    
     const [molde,setmolde] = useState(true)    
@@ -55,9 +56,9 @@ function FormatoRevisados() {
 
     },[])
     const tablaC = (e) =>{
-                settabla({visible:false , tipotabla:e.target.value})
                 settablavisible(e.target.value)
     setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+    setleerfolio({[e.target.id]: e.target.value })
     };
     const tipoM = (e)=>{
             if (e.target.id ==="Solped"){
@@ -90,9 +91,11 @@ function FormatoRevisados() {
                     termPago: e.target.checked    
                     }))            
                     };
-                    setregistro(prev => ({...prev, tipo_modificacion: { ...prev.tipo_modificacion, [e.target.id]: e.target.checked}}));
-    };
-
+setregistro(prev => {
+  const objetoActual = JSON.parse(prev.tipo_modificacion || '{}');
+  const objetoActualizado = {...objetoActual, [e.target.id]: e.target.checked };
+  return { ...prev, tipo_modificacion: JSON.stringify(objetoActualizado)};});   
+ };
     const fechahoy = new Date()
     const fechaFormateada = fechahoy.toISOString().split('T')[0];
     const cambiofila = async (e , indicefila ) => {
@@ -159,7 +162,6 @@ function FormatoRevisados() {
                         try {
                         const datos = await ClientesService.getTpPm(POsUnicas);
                             const index = Object.keys(datosTpPm).length;
-                            // setdatosTpPm(prev => ({...prev, [index]: datos.data[0]}));
                             setregistrotabla(prev => ({ ...prev, ...datos.data[0]}));
                         } catch (error) {
                             console.log(error);
@@ -171,6 +173,14 @@ function FormatoRevisados() {
                 montototal: cantidad * precio, montoparcel: cantidad * precio } };
                 });
             } 
+
+            setregistro(prev => {
+  const objetoActual = JSON.parse(prev.contenido_tabla || '{}');
+  const objetoActualizado = { ...objetoActual, datosTpPm };
+  return { ...prev, contenido_tabla: JSON.stringify(objetoActualizado)
+  };
+});
+
         }
     const añadirfila = (e) =>{
         if (e.target.innerText === "+"){
@@ -197,6 +207,8 @@ function FormatoRevisados() {
         }
         setclickcambio(e.target.checked ? false : true);
         setregistro((prev) => ({ ...prev, [e.target.id]: e.target.value }))
+            setleerfolio({[e.target.id]: e.target.value });
+
     }
 }
 const getordenTP = (e)=>{
@@ -205,16 +217,17 @@ const getordenTP = (e)=>{
               ClientesService.getTpPm(e.target.value).then((response)=>{
                 setdatosTpPm(response.data);
                 setregistro((prev) => ({ ...prev, proveedor:response.data[0].proveedor}))
-                // setregistrotabla((prev) => ({ ...prev, ...response.data}))
             }).catch((error)=>{
                 console.log(error)
               })}
 }
 const solpedfunc = (e) =>{
     if (e.target.id === 'solped'){  
-    setregistro((prev) => ({ ...prev, solpedval: e.target.value }))
+    setregistro((prev) => ({ ...prev, nosolped: e.target.value }))
 }else if (e.target.id === 'molde'){
-    setregistro((prev) => ({ ...prev, moldeval: e.target.value }))
+    setregistro((prev) => ({ ...prev, molde: e.target.value }))
+}else if (e.target.id === 'motivo'){
+    setregistro((prev) => ({ ...prev, motivo: e.target.value }))
 }
 }
 const cambioSwith = (e)=>{
@@ -233,7 +246,7 @@ const cambioSwith = (e)=>{
 const clavesunicas = [...new Set(proveedores?.map(p => p.c_pag))];
 const nuevotermPago = (e) =>{
     const nterm = proveedores?.find(p => p.c_pag === e.target.value)?.terminos_de_pago;
-    setregistro((prev) => ({ ...prev,  nuevotermpago: nterm  }));
+    setregistro((prev) => ({ ...prev,  nvotermpago: nterm  }));
  }
  const AplicaPOs = (e)=>{
     if(e.target.id ==="juntopo"){
@@ -246,27 +259,40 @@ const Cancelar =()=>{
     setregistro([]);
     setdatosTpPm([]);
     setfilasTab([]);
-    settabla('')
 }
 
-const consola_regs = ()=>{
-    console.log(registro)
-    console.log(datosTpPm)
-}
+const guardaRegistro = ()=>{
+    ClientesService.postFormatoRevisados(registro).then((response)=>{
+        const id = String(response.data.id).padStart(3, '0');
+        alert("Registro guardado " +  "FOLIO REV-" +   id)
+        window.location.href = ClientesService.linkInicio;
 
- return (
+    }).catch((err)=>{
+        console.log(err)
+    })
+}
+const buscarFolio = ()=>{
+        const id = Number(foliorevisado);
+        ClientesService.getFormatoRevisados(id).then((response)=>{
+            setleerfolio(response.data)
+        }).catch((error)=>{
+            console.log(error)
+        })
+    }
+
+return (
     <div style={{width:tablavisible === 'unica' ? '100%' : '110%' }} >
         <Stack direction='row' alignItems='end' spacing={2} sx={{padding:'1%',marginLeft:'70%' }}>
-            <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio:
-            <input type="text" id="folioBusqueda" className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
+            <span className="input-group-text bg-white border-secondary-subtle fw-bold text-muted small">Folio: REV-
+            <input onChange={(e)=>{setfoliorevisado(e.target.value)}} type="number" id="miInput" style={{width:'50px'}} className="form-control form-control-sm text-center border-secondary-subtle fw-bold text-uppercase" />
             </span>
-            <button className="btn btn-primary btn-sm fw-bold px-4" style={{height:'40px'}}>Buscar</button>
+            <button onClick={()=>{buscarFolio()}} className="btn btn-primary btn-sm fw-bold px-4" style={{height:'40px'}}>Buscar</button>
         </Stack>
         <section style={{padding:'.5%', border:'solid #dfdfdf 1px'}}>
             <h5 className="fw-bold" style={{ color: '#F29111' , textAlign:'center' }}>SOLICITUD PARA MODIFICACIÓN / CANCELACIÓN TOTAL Y/O PARCIAL EN ÓRDENES DE COMPRA</h5>
             <section style={{alignItems:'center',display:'flex' , gap: '1rem' , border:'sold #EAEAEA 1px'}}>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Unidad de Negocio</label>
-                <select onChange={(e)=>{resultado(e)}} id='bu' className='form-select' style={{width:'15%'}}>
+                <select onChange={(e)=>{resultado(e)}} id='bu' className='form-select' style={{width:'15%'}} value={leerfolio?.unidad_de_negocio}>
                     <option>Seleccione</option>
                         {BUs.map((item) => (
                         <option key={item} value={item}>
@@ -274,26 +300,26 @@ const consola_regs = ()=>{
                         </option>))}
                 </select>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Responsable </label>
-                <input value={registro.responsable || []} disabled/>
+                <input value={registro.responsable === undefined ? leerfolio?.responsable : registro.responsable || [] } disabled/>
                 <label style={{width:'75px' , textWrap:'pretty'}}>Fecha </label>
                 <input disabled style={{backgroundColor:'#f8f8f8'}} type='date' value={fechaFormateada} />
                 <label style={{width:'75px' , textWrap:'pretty' , marginLeft:'10%'}}>FOLIO</label>
-                <input disabled />
+                <input value={(leerfolio === [] || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
             </section> 
             <section style={{padding:'20px', alignItems:'center',display:'flex' , gap:'1rem' ,border:'solid #d1cece 1px ' }}>
-                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" />
+                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />
                 <label for="modificacion">Modificación</label>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="canceltot" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="canceltot" checked={leerfolio?.tipoRev === "canceltot" } />
                 <label for="canceltot">Cancelación total</label>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="cancelparc" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="tipoRev" name="cambio" value="cancelparc" checked={leerfolio?.tipoRev === "cancelparc" } />
                 <label for="cancelparc">Cancelación parcial (No hay PI)</label>
             </section>
-            <section hidden={clickcambio} style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
-                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="ea" />
+            <section hidden={(clickcambio && leerfolio.id === undefined) ? true : false } style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
+                <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="ea"  checked={leerfolio?.clasir === "ea" } />
                 <label for="ea">EA</label>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="revisado" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="revisado"  checked={leerfolio?.clasir === "revisado" } />
                 <label for="revisado">REVISADO</label>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="reimpresion" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}} onClick={(e)=>{resultado(e)}} type='radio' id="clasir" name="subcambio" value="reimpresion"  checked={leerfolio?.clasir === "reimpresion" } />
                 <label for="reimpresion">REIMPRESION(No hay PI)</label>
               </section>
             <section hidden={clickEA} style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
@@ -305,9 +331,9 @@ const consola_regs = ()=>{
                 <label hidden={clicksidocs} style={{color:'red'}}><b>Agregar confirmación de revocación de documentos</b></label>
             </section>
             <section  style={{marginTop:'1%', alignItems:'center',display:'flex' , gap:'1rem', border:'solid #d1cece 1px ' }}>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}}  onClick={(e)=>{tablaC(e)}}  type='radio' id="tipotabla" name="tipotabla" value="unica" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}}  onClick={(e)=>{tablaC(e)}}  type='radio' id="tipotabla" name="tipotabla" value="unica"   checked={leerfolio?.tipotabla === "unica"  }/>
                 <label for="unica">Única</label>
-                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}}  onClick={(e)=>{tablaC(e)}} type='radio' id="tipotabla" name="tipotabla" value="masivo" />
+                <input style={{marginLeft:'90px', transform: 'scale(1.3)'}}  onClick={(e)=>{tablaC(e)}} type='radio' id="tipotabla" name="tipotabla" value="masivo"   checked={leerfolio?.tipotabla === "masivo" } />
                 <label for="masivo">Masivo</label>
                 <div  style={{padding:'1%' , marginLeft:'2%' ,display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px' ,textAlign:'center' , maxWidth:'60%'  }}>
                     {Orden_Etd_Cur.map((item) => (
@@ -323,7 +349,7 @@ const consola_regs = ()=>{
                     <label hidden={tablavisible === 'unica'  ? false :false} style={{borderBottom:'solid 1px black', padding:'5%',width:'250%'}}> Proveedor:  {datosTpPm[0]?.proveedor}</label>
                 </div>                
             </section>
-            <div hidden={tabla.visible} style={{marginTop:'1%', alignItems:'center' , border:'solid #d1cece 1px ' }}>
+            <div hidden={tablavisible === '' ? true : false} style={{marginTop:'1%', alignItems:'center' , border:'solid #d1cece 1px ' }}>
                <label style={{marginTop:'10px', marginLeft:'10px'}}>Tipo de modificación</label>
             <Stack direction='row' >
                 <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap:'10px', textAlign:'left' , minWidth:'70%'  }}>
@@ -344,7 +370,7 @@ const consola_regs = ()=>{
         </Stack>
         <Stack hidden={otro} direction='row' style={{padding:'1%',marginLeft:'12%',maxWidth:'80%'}}>
             <span >Motivo...</span>&nbsp;
-            <input style={{border:'none', borderBottom:'1px solid black'}} type='text' />
+            <input onChange={(e)=>{solpedfunc(e)}} style={{border:'none', borderBottom:'1px solid black'}} type='text' id='motivo' />
         </Stack>        
 </Stack>
     </div>
@@ -503,7 +529,7 @@ const consola_regs = ()=>{
         </div>
        </section> 
         <Stack  marginLeft='40%' direction='row' spacing={2}>
-            <button onClick={()=>{consola_regs()}} className='btn btn-success'>Guardar</button>
+            <button onClick={()=>{guardaRegistro()}} className='btn btn-success'>Guardar</button>
             <button onClick={()=>{Cancelar()}} className='btn btn-danger'>Cancelar</button>
         </Stack>
         <br></br>

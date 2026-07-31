@@ -217,6 +217,7 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases2();
     await ClientesService.actualizarBases3();   
     await ClientesService.actualizarBases4(); 
+    await ClientesService.actualizarBases5(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {
@@ -286,7 +287,6 @@ const nuevorango = (filtrofull) => {
       liberada_por_matrices: libMatr
     };
     const rowConFechasTransformadas = transformarFechas(rowFinal);
-    console.log(rowConFechasTransformadas)
     await ClientesService.updatematrizcd(id, rowConFechasTransformadas);
     GeneraHistorial(id, rowConFechasTransformadas, originalRow);
     return rowConFechasTransformadas;
@@ -1158,6 +1158,7 @@ renderEditCell: (params) => (
         <input   onChange={(a) =>{setpoHist(a.target.value)}}  placeholder="Historial PO" value={poHist}></input>
         <Link to={`/importaciones/controldocumental/matrizcd/historialCD`} state={{ poHist }} className="btn btn-secondary" name="buscarHist" >🔍</Link>
         <Box sx={{ flexGrow: 1 }} />
+         <Link to={`/importaciones/controldocumental/matrizcd/calculadora`} className="btn btn-primary"  >Calculadora</Link>
         <button onClick={()=>{actualizar_Bases()}} style={{display: ["daguilarm", "natorreg", "Emmanuel","arramireza"].includes(localStorage.getItem("username")) ? "" : "none"}} className="btn btn-danger"> Actualizar Bases </button>
         <ExportarExcelMATRIZ columns={columns} rows={valores} fuente="MatrizCD" / >
         <br></br>

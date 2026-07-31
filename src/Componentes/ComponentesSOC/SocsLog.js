@@ -567,9 +567,9 @@ const filter = (e) => {
                         const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
                         const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
                         const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
-                          const fechainicio = search.fechainicio === "" || p.fecha_de_emisionoc >= search.fechainicio;                          
-                          const fechafin = search.fechafin === "" || p.fecha_de_emisionoc <= search.fechafin;                          
-                          const filtroenviadas = search.fechacerradas ? p.enviada !== null : ( p.enviada === null || p.enviada !== null);                          
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;                          
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null : ( p.enviada === null || p.enviada !== null);                          
                           return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
                           fuente="SocsLog"></ExportarExcelLOG>        
               </div>
@@ -584,9 +584,9 @@ const filter = (e) => {
                         const filtroUsuario = search.filtroUsuario === "ALL" || p.asistentepos === search.filtroUsuario;
                         const filtroPo = search.filtroPo === "" ||  p.nopo.toString().includes(search.filtroPo);
                         const filtroPi = search.filtroPoi === "" || p.nooc.toString().includes(search.filtroPi);
-                          const fechainicio = search.fechainicio === "" || p.fecha_de_emisionoc >= search.fechainicio;                          
-                          const fechafin = search.fechafin === "" || p.fecha_de_emisionoc <= search.fechafin;
-                          const filtroenviadas = search.fechacerradas ? p.enviada !== null :  ( p.enviada === null || p.enviada !== null);                          
+                          const fechainicio = search.fechainicio === "" || p.reciboctrlpos >= search.fechainicio;                          
+                          const fechafin = search.fechafin === "" || p.reciboctrlpos <= search.fechafin;
+                          const filtroenviadas = search.fechacerradas ? p.enviada === null :  ( p.enviada === null || p.enviada !== null);                          
                           return filtroUsuario && (filtroPo || filtroPi) && (fechainicio && fechafin ) && filtroenviadas;})}
                           columns={columns}
                         getRowId={(row) => row.id}

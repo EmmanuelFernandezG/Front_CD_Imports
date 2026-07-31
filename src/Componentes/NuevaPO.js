@@ -149,7 +149,6 @@ let valor=a.target.value;
       if (valor === "" || valor === null) {
         nuevoRegistro[a.target.name] = "";
         nuevoRegistro[a.target.name.replace("liberada_por_", "fecha_")] = "";
-        console.log(nuevoRegistro)
       }else{
         const opcion = window.confirm("¿Deseas usar la fecha actual?\nPresiona 'Cancelar' para usar N/A");
         nuevoRegistro[a.target.name] = valor;
@@ -191,7 +190,6 @@ setRegistro(nuevoRegistro);
   setRegistrohist(nuevoRegistro)
 
 };
-{console.log(registro)}
   const handleopen = ()=>{
       ClientesService.getnuevapo(sub).then((response) => {
       if (response.data[0].folio_tt !== undefined) {

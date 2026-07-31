@@ -173,7 +173,6 @@ const contactosall = async () => {
     console.error("Error al obtener contactos:", error);
   }
 };
-
     const Guardar = async () => {
        try {
         //const statusActual = ((registro.reimp && registro.reimp !== "")? registro.reimp: (registro.ubicacion_en_archivo && registro.ubicacion_en_archivo !== "") ? `EA${registro.ubicacion_en_archivo}-0` : ((registro.rea && registro.rea !== "") ? `R${registro.rea}-1` : "1"));
@@ -226,11 +225,19 @@ const contactosall = async () => {
             await ClientesService.saveLog(logCerrar);
         }
 
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott,
-        numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || "", ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
-  
-        await ClientesService.new_log(datosLog);
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || ""
+          , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
 
+      const exists = logsAll.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
+      if (exists === false){
+         await ClientesService.new_log(datosLog);
+      }else{
+          const total = logsAll.filter(
+            logitem => logitem.nopo === registro.foliott || logitem.nopo === registro.nooc
+          );
+          await Promise.all(total.map(item => ClientesService.saveLog({ id: item.id, ...datosLog}))
+);
+      }
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
            if (error.response) {

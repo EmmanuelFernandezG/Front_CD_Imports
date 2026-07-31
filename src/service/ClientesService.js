@@ -9,8 +9,13 @@ const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocu
 const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
 // const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
+// const Link_Inicial =   "http://172.18.2.87:8080/record";
+const Link_Inicial =  "http://localhost:8080/record";
 
 class Clienteservice {
+  linkInicio(){
+    return Link_Inicial
+  }
   getAllClientes() {
     return axios.get(Clientes_BASE_REST_API + "/matrizcd18");
   }
@@ -176,6 +181,12 @@ getproveedoresall (){
 getlogall() {
     return axios.get(`${Clientes_BASE_REST_API}/log-all`);
   }
+  getMatrizCalculadoraAll(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/matrizcalculadoraall")
+}
+actualizarBases5(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/matrizcalc")
+}
 saveLog(datosLog) {
     return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);
   }
@@ -190,6 +201,13 @@ getTpPm(PO) {
 }
 getNombreFabrica(noSap, sapFabrica) {
   return axios.get(documentos_AUDIT + "/formatos/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
+}
+
+getFormatoRevisados(id){
+    return axios.get(documentos_AUDIT + "/revisados/listar/" + id)
+}
+postFormatoRevisados(registro){
+    return axios.post(documentos_AUDIT + "/revisados/guardarrevisado/" , registro)
 }
 
 getSellosAll(){
@@ -229,6 +247,13 @@ getTrialAll(){
 
 getTrialporFolio(folio) {
   return axios.get(documentos_AUDIT + "/trialorder/buscar/" + folio)
+}
+getRevisados(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/revisadosall")
+}
+
+getWksh(){
+  return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
 }
 }
 export default new Clienteservice();
