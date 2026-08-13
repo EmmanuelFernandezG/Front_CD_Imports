@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, CircularProgress } from '@mui/material';
+import {CircularProgress } from '@mui/material';
 import ClientesService from "../service/ClientesService";
-import FileSaver from 'file-saver';
 import { useNavigate } from "react-router-dom";
-import {grupoCompras} from './materialReutilizable/RangosReusables';
 
 function CalculadoraC(){
   const navigate = useNavigate();
@@ -18,7 +16,6 @@ function CalculadoraC(){
   const [matrizCalculadora, setMatrizCalculadora]=useState(null);
   const [total, setTotal]=useState(0);
   const [totalqty, setTotalQty]= useState(0);
-  const [cantidades, setCantidades] = useState({});
   const [wkshAll, setWkshAll]=useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +47,7 @@ function CalculadoraC(){
       setMatrizCalculadora(resMatriz.data || []);
       setWkshAll(resWksh.data || []);
     } catch (error) {
-      console.error("Error al cargar los datos de la vista:", error);
+      console.log("Error:", error);
     } finally {
       setLoading(false);
     }
@@ -63,12 +60,11 @@ function CalculadoraC(){
       setProveedorSeleccionado(null);
       return null;
     }
-    const valorL = valor.toString().trim();
     const proveedorSelect= listaProveedores.find(p => {
       const prov= p.acreedor || p.noProveedor || p.noproveedor;
-      return prov?.toString().trim()===valorL;
+      return prov?.toString().trim()===valor.toString().trim();
     });
-   const provs= proveedorSelect || {noProveedor: valorL}
+   const provs= proveedorSelect || {noProveedor: valor.toString().trim()}
    setProveedorSeleccionado(provs);
    return provs;
   } 
@@ -87,9 +83,11 @@ function CalculadoraC(){
     if (numProvSoc) {
       provActual = handleProveedorCalc(numProvSoc);
     }
+    const proveedorr = provActual?.noProveedor.toString().trim();
+
     if(foliot){
       setfolioSeleccionado(foliot);
-      const noocObtenido=foliot.nooc;
+      const noocObtenido = foliot.nooc;
 
       if(noocObtenido){
         const cod = revisados.filter((r) => r.poth === noocObtenido || r.po === noocObtenido);
@@ -99,52 +97,52 @@ function CalculadoraC(){
             return codig === fila.material?.toString().trim();
           });
 
-          const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim();
-          const tip=matrizCalculadora.find((mc)=>{
+          const tipomat = (codi?.codigo || codi?.Codigo)?.toString().trim();
+          const tip = matrizCalculadora.find((mc)=>{
             const tipo=(mc.codigo)?.toString().trim();
             const provMC = (mc.no_proveedor)?.toString().trim();
             const matchCodigo = tipo === tipomat;
-            const matchProveedor = (mc.no_proveedor?.toString().trim())? provMC === (mc.no_proveedor?.toString().trim()): true;
+            const matchProveedor = (proveedorr)? provMC === (proveedorr): true;
             return matchCodigo && matchProveedor;
           })
           const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
-          const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
+          const bubuUCASE = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim().toUpperCase();
+          
+          const concatBusqueda = `${proveedorr}${bubu}`;
           
           const registroWksh = wkshAll.find((w) => {
-            const concatWksh = (w.concatenar || "").toString().trim();
+            const concatWksh = (w.concatenar).toString().trim();
             const matchConcat = concatWksh === concatBusqueda;
-            const matchProv = w.no_Proveedor?.toString().trim() === proveedorSeleccionado?.noProveedor;
+            const matchProv = w.no_Proveedor?.toString().trim() === proveedorr;
             const matchBU = (w.bu)?.toString().trim() === bubu;
             return matchConcat || (matchProv && matchBU);
           });
-          const cont=contactosAll.find((cs)=>{
-            const contactoo=(cs.unidaddeNegocio)?.toString().trim();
-            return contactoo===bubu;
+          const cont = contactosAll.find((cs)=>{
+            const contactoo = (cs.unidaddeNegocio)?.toString().trim();
+            return contactoo===bubu ||  contactoo===bubuUCASE;
           })
           const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
           const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
-
+//''''''''''''''''''''''''''' AQUI
 
           return{
             ...fila, 
             bu: mostarbu,
             comprador: (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "",
             planeador: (cont?.gteplan+"-"+cont?.planPlan) || "",
-            tipomatriz: (tip?.tipomatriz) || "", 
-            tc_MP: registroWksh?.tc_MP || "",
+            tipomatriz: (tip?.tipomatriz) || "N/A", 
+            tc_MP: (registroWksh?.tc_MP) || "",
             subtotalPo: Number(((fila.cantidad)*(fila.precio)) || 0),
             cantidad: Number(fila.cantidad || 0) 
           }
         })
         const sumaQty = bus.reduce((acc, fila) => acc + fila.cantidad, 0);
-        const idProveedorStr = (proveedorSeleccionado?.acreedor || proveedorSeleccionado?.noProveedor || proveedorSeleccionado?.noproveedor || "").toString().trim();
         let sumaMonto = 0;
         sumaMonto = bus.reduce((acc, fila) => acc + fila.subtotalPo, 0);
+
         setTotalQty(sumaQty);
         setTotal(sumaMonto);
         setTablas(bus)
-        console.log("bus")
-        console.log(bus)
       }
     }else{
       setfolioSeleccionado({foliott:val, nooc:""})
@@ -153,7 +151,6 @@ function CalculadoraC(){
       setTotalQty(0);
     }
   }
-
   const handleInputChange = (index, field, value) => {
     const nuevasTablas = [...tablas];
     const fila = { ...nuevasTablas[index] };
@@ -163,22 +160,97 @@ function CalculadoraC(){
     fila.subtotalPi = qtyPi * precioPi;
     nuevasTablas[index] = fila;
     setTablas(nuevasTablas);
-  console.log("nuevastablas")
-  console.log(nuevasTablas)
+  }
+
+  const agregarFila=() => {
+    const nuevaFila={
+      material: "", bu: "", planeador: "",comprador: "",
+      tipomatriz: "", cantidad: "", precio: "", subtotalPo: ""
+    }
+    setTablas((prevTablas) => [...prevTablas, nuevaFila]);
+  }
+
+  const eliminarFila=(filaIndex) => {
+    const nuevasTablas = tablas.filter((_, index) => index !== filaIndex); // _ ignora el elemnto y toma el indice numS
+    setTablas(nuevasTablas);
+    const nuevaSumaQty = nuevasTablas.reduce((acc, fila) => acc + (Number(fila.cantidad) || 0), 0);
+    const nuevaSumaMonto = nuevasTablas.reduce((acc, fila) => acc + (Number(fila.subtotalPo) || 0), 0);
+
+    setTotalQty(nuevaSumaQty);
+    setTotal(nuevaSumaMonto);
+  }
+
+  const handleCodigoIngresado=(nuevoCodigo, index)=>{
+    const nuevasTablas=[...tablas];
+    const filaAct={...nuevasTablas[index]}
+    filaAct.material=nuevoCodigo;
+
+    if(nuevoCodigo){
+      const prov = (proveedorSeleccionado?.noProveedor || "").toString().trim();
+      const codi = codigos.find((c) => {
+        const codig = (c.codigo || c.Codigo)?.toString().trim();
+        return codig === nuevoCodigo;
+      });
+      const qtyprc= revisados.find((r) => (r.material || r.codigo || r.Codigo)?.toString().trim() === nuevoCodigo)
+      const cantEncontrada = Number(qtyprc?.cantidad || codi?.cantidad || 0);
+      const precioEncontrado = Number(qtyprc?.precio || codi?.precio || 0);
+      
+      const tipomat=(codi?.codigo || codi?.Codigo)?.toString().trim() || nuevoCodigo;
+      const tip=matrizCalculadora.find((mc)=>{
+        const tipo=(mc.codigo)?.toString().trim();
+        const provMC = (mc.no_proveedor)?.toString().trim();
+        const matchCodigo = tipo === tipomat;
+        const matchProveedor = prov ? provMC === prov : true;
+        return matchCodigo && matchProveedor;
+      })
+
+      const bubu = (codi?.UnidadDeNegocio || codi?.unidad_de_negocio || codi?.unidadDeNegocio || "").toString().trim();
+      const concatBusqueda = `${proveedorSeleccionado?.noProveedor}${bubu}`;
+      
+      const registroWksh = wkshAll.find((w) => {
+        const concatWksh = (w.concatenar || "").toString().trim();
+        const matchConcat = concatWksh === concatBusqueda;
+        const matchProv = w.no_Proveedor?.toString().trim() === proveedorSeleccionado?.noProveedor;
+        const matchBU = (w.bu)?.toString().trim() === bubu;
+        return matchConcat || (matchProv && matchBU);
+      });
+      const cont = contactosAll.find((cs)=>{
+        const contactoo=(cs.unidaddeNegocio)?.toString().trim();
+        return contactoo===bubu;
+      })
+      const grupoPlan = cont?.grupoplan?.toString().trim() || "N/A";
+      const mostarbu = (grupoPlan === "N/A" || grupoPlan==="" || !grupoPlan) ? bubu : grupoPlan+" "+bubu;
+
+      filaAct.bu = mostarbu;
+      filaAct.comprador= (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "";
+      filaAct.planeador= (cont?.gteplan+"-"+cont?.planPlan) || "";
+      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "";
+      filaAct.etd = qtyprc?.etd || "";
+      filaAct.tc_MP = registroWksh?.tc_MP || "";
+      filaAct.cantidad = cantEncontrada;
+      filaAct.precio = precioEncontrado;
+      filaAct.subtotalPo = cantEncontrada * precioEncontrado;
+    } else{
+      filaAct.bu = "";
+      filaAct.tipomatriz = "";
+      filaAct.tc_MP = "";
+      filaAct.cantidad = 0;
+      filaAct.precio = 0;
+      filaAct.subtotalPo = 0;
+    }
+    nuevasTablas[index] = filaAct;
+    setTablas(nuevasTablas);
+    const nuevaSumaQty = nuevasTablas.reduce((acc, f) => acc + (Number(f.cantidad) || 0), 0);
+    const nuevaSumaMonto = nuevasTablas.reduce((acc, f) => acc + (Number(f.subtotalPo) || 0), 0);
+    setTotalQty(nuevaSumaQty);
+    setTotal(nuevaSumaMonto);
   }
 
   const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi) || 0), 0);
   const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi) || 0), 0);
 
-  const handleCantidadItemsChange=(index, value)=>{
-    setCantidades({
-      ...cantidades, 
-      [index]: value
-    })
-  }
-
   return (
-   <div>
+   <div style={{marginLeft:'-35px',width:'105%'}}>
     {loading ?  (   <div style={{padding:'20%' , marginLeft:'10%'}}> <CircularProgress /> <label>Cargando</label> </div> ) : (  
   <div className="container-fluid p-4 border" style={{ minHeight: "130vh" }}>
     <div className="d-flex justify-content-between align-items-center mb-4">
@@ -237,10 +309,6 @@ function CalculadoraC(){
           <label className="form-label fw-bold extra-small text-danger mb-1">STATUS / PROBLEMA</label>
           <input type="text" className="form-control form-control-sm bg-warning fw-bold text-center" value={folioSeleccionado?.status_problema || ""} readOnly />
         </div>
-        {/* <div className="col-md-2">
-          <label className="form-label fw-bold extra-small text-muted mb-1">Status PO</label>
-          <input type="text" className="form-control form-control-sm fw-bold text-center" />
-        </div> */}
       </div>
     
 <br></br>
@@ -278,14 +346,13 @@ function CalculadoraC(){
         </div>
       </div>
     </div>
-
-    <div className="table-responsive shadow-sm rounded border bg-white p-2">
+    <div className="table-responsive shadow-sm rounded bg-white p-2">
       <div className="d-flex flex-nowrap align-items-start gap-3 pb-2">
-
         <div className="flex-shrink-0">
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
+          <table className="table table-striped table-hover align-middle mb-0">
             <thead className="table-dark text-center small">
-              <tr>
+              <tr style={{height:'59px'}}>
+                <th className='bg-white'><button className="btn btn-success btn-sm fw-bold px-2 py-0" onClick={agregarFila}>+</button></th>
                 <th>CÓDIGO</th>
                 <th>BU</th>
                 <th>PLANNER</th>
@@ -300,21 +367,23 @@ function CalculadoraC(){
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{ height: "40px" }}>
-                    <td className="text-center fw-bold">{fila.material}</td>
-                    <td>{fila.bu}</td>
-                    <td>{fila.planeador}</td>
-                    <td>{fila.comprador}</td>
-                    <td className="text-center">{fila.tipomatriz}</td>
-                    {/* <td></td> */}
-                    <td className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
-                    <td>${fila.precio}</td>
-                    <td className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN'}).format((fila.cantidad || 0)*(fila.precio || 0))}</td>
-                    <td>{fila.etd}</td>
+                  <tr key={index} style={{ height: "59px"  }}>
+                    <td style={{width:'15px'}} className="text-center">
+                      <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(index)}>-</button>
+                    </td>
+                    <td style={{width:'80px'}}><input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)}></input></td>
+                    <td style={{width:'180px'}}>{fila.bu}</td>
+                    <td style={{width:'210px'}}>{fila.planeador}</td>
+                    <td style={{width:'250px'}}>{fila.comprador}</td>
+                    <td style={{width:'100px'}} className="text-center">{fila.tipomatriz}</td>
+                    <td  style={{width:'100px'}} className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
+                    <td  style={{width:'100px'}}>${fila.precio}</td>
+                    <td  style={{width:'100px'}} className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN'}).format((fila.cantidad || 0)*(fila.precio || 0))}</td>
+                    <td  style={{width:'100px'}}>{fila.etd ? new Date(fila.etd).toLocaleDateString('es-Mx') : ''}</td>
                   </tr>
                 ))
               ) : (
-                <tr style={{ height: "40px" }}>
+                <tr style={{ height: "59px" }}>
                   <td colSpan="10" className="text-center text-muted bg-light">Sin códigos encontrados</td>
                 </tr>
               )}
@@ -322,11 +391,11 @@ function CalculadoraC(){
           </table>
         </div>
 
-        <div className="flex-shrink-0" style={{ width: "340px" }}>
+        <div className="flex-shrink-0" style={{ width: "340px"}}>
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="bg-primary text-white text-center small">
               <tr>
-                <th style={{width:"90px"}}>QTY PI</th>
+                <th style={{width:"90px", height:"59px"}}>QTY PI</th>
                 <th style={{width:"110px"}}>PRECIO PI</th>
                 <th style={{width:"140px"}}>SUBTOTAL PI</th>
               </tr>
@@ -334,8 +403,8 @@ function CalculadoraC(){
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{height: "40px"}}>
-                    <td className="p-1">
+                  <tr key={index} style={{height: "59px" }}>
+                    <td  className="p-1">
                       <input className="form-control form-control-sm text-center" value={fila.qtyPi || ''} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)}/>
                     </td>
                     <td className="p-1">
@@ -359,14 +428,14 @@ function CalculadoraC(){
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="table-dark text-center small">
               <tr>
-                <th>BU LCI</th>
+                <th style={{height:"59px"}}>BU LCI</th>
                 <th>Aplica reducción TC/MP</th>
               </tr>
             </thead>
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{ height: "40px" }}>
+                  <tr key={index} style={{ height: "59px" }}>
                     <td>{fila.bu}</td>
                     <td className="text-center">
                       <span>{fila.tc_MP || "NO"}</span>
@@ -386,7 +455,7 @@ function CalculadoraC(){
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="table-dark text-center small">
               <tr>
-                <th>F&R MATRICES</th>
+                <th  style={{height:'59px'}}>F&R MATRICES</th>
               </tr>
             </thead>
             <tbody className="small">
