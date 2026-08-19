@@ -44,7 +44,11 @@ export const ordenador =[
 "Trial P.O. / NOM",
 "Trial P.O. URGENTE",
 "ALTERNOS",
-"ALTERNOS / URGENTE"
+"ALTERNOS / URGENTE",
+"CNY Trial P.O / NOM",
+"CNY Trial P.O. URGENTE",
+"CNY PO URGENTE",
+"DIRECTA ESPECIAL"
 ]
 
 export const razonSocial=[
@@ -140,3 +144,4 @@ export const other_items = {
 2940: {clave:"Otros Cargos libres de cargo",tipo:"lista",valor:["SER","PZAS"]},
 2941: {clave:"Producto para evaluación libres de cargo",tipo:"string",valor:""}
 };
+

@@ -55,7 +55,7 @@ function CalculadoraC(){
   cargarDatos();
 }, []);
 
-  const handleProveedorCalc=(valor)=>{
+const handleProveedorCalc=(valor)=>{
     if(!valor){
       setProveedorSeleccionado(null);
       return null;
@@ -249,8 +249,9 @@ function CalculadoraC(){
   const totalQtyPi = tablas?.reduce((acc, f) => acc + (Number(f.qtyPi) || 0), 0);
   const totalSubtotalPi = tablas?.reduce((acc, f) => acc + (Number(f.subtotalPi) || 0), 0);
 
+    const ancho = window.screen.width;
   return (
-   <div style={{marginLeft:'-35px',width:'105%'}}>
+   <div style={{ marginLeft: ancho > 1900 ? '-15vw' :'-5vw' , width: ancho > 1900 ? '100vw' : '90vw'}}>
     {loading ?  (   <div style={{padding:'20%' , marginLeft:'10%'}}> <CircularProgress /> <label>Cargando</label> </div> ) : (  
   <div className="container-fluid p-4 border" style={{ minHeight: "130vh" }}>
     <div className="d-flex justify-content-between align-items-center mb-4">
@@ -372,14 +373,14 @@ function CalculadoraC(){
                       <button className="btn btn-danger btn-sm fw-bold px-2 py-0" onClick={() => eliminarFila(index)}>-</button>
                     </td>
                     <td style={{width:'80px'}}><input className="form-control form-control-sm text-center fw-bold" value={fila.material || ""} onChange={(e) => handleCodigoIngresado(e.target.value, index)}></input></td>
-                    <td style={{width:'180px'}}>{fila.bu}</td>
+                    <td style={{width:'130px'}}>{fila.bu}</td>
                     <td style={{width:'210px'}}>{fila.planeador}</td>
                     <td style={{width:'250px'}}>{fila.comprador}</td>
                     <td style={{width:'100px'}} className="text-center">{fila.tipomatriz}</td>
-                    <td  style={{width:'100px'}} className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
+                    <td  style={{width:'70px'}} className="text-center">{new Intl.NumberFormat('es-MX').format(fila.cantidad || 0)}</td>
                     <td  style={{width:'100px'}}>${fila.precio}</td>
                     <td  style={{width:'100px'}} className="fw-bold text-success">{new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN'}).format((fila.cantidad || 0)*(fila.precio || 0))}</td>
-                    <td  style={{width:'100px'}}>{fila.etd ? new Date(fila.etd).toLocaleDateString('es-Mx') : ''}</td>
+                    <td  style={{width:'70px'}}>{fila.etd ? new Date(fila.etd).toLocaleDateString('es-Mx') : ''}</td>
                   </tr>
                 ))
               ) : (
@@ -403,14 +404,14 @@ function CalculadoraC(){
             <tbody className="small">
               {tablas && tablas.length > 0 ? (
                 tablas.map((fila, index) => (
-                  <tr key={index} style={{height: "59px" }}>
+                  <tr key={index} style={{height: tablas[0]?.planeador?.length > 50 ? "79.5px" : "59px", width: "auto" }}>
                     <td  className="p-1">
-                      <input className="form-control form-control-sm text-center" value={fila.qtyPi || ''} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)}/>
+                      <input className="form-control form-control-sm text-center" value={fila.qtyPi || ''} defaultValue={fila.cantidad} onChange={(e) => handleInputChange(index, 'qtyPi', e.target.value)}/>
                     </td>
                     <td className="p-1">
-                      <input className="form-control form-control-sm text-end" value={fila.precioPi || ''} onChange={(e) => handleInputChange(index, 'precioPi', e.target.value)}/>
+                      <input className="form-control form-control-sm text-end" value={fila.precioPi || ''} defaultValue={fila.precio} onChange={(e) => handleInputChange(index, 'precioPi', e.target.value)}/>
                     </td>
-                    <td className="text-end fw-bold text-primary bg-light px-2">
+                    <td style={{width:'10px'}} className="text-end fw-bold text-primary bg-light px-1">
                       {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(fila.subtotalPi || 0)}
                     </td>
                   </tr>
@@ -428,8 +429,8 @@ function CalculadoraC(){
           <table className="table table-striped table-hover table-bordered align-middle mb-0">
             <thead className="table-dark text-center small">
               <tr>
-                <th style={{height:"59px"}}>BU LCI</th>
-                <th>Aplica reducción TC/MP</th>
+                <th style={{height:"59px",width:'45%'}}>BU LCI</th>
+                <th style={{width:'45%'}}>Aplica reducción TC/MP</th>
               </tr>
             </thead>
             <tbody className="small">
@@ -447,24 +448,6 @@ function CalculadoraC(){
                   <td colSpan="2" className="text-center text-muted bg-light">-</td>
                 </tr>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex-shrink-0" style={{ minWidth: "140px" }}>
-          <table className="table table-striped table-hover table-bordered align-middle mb-0">
-            <thead className="table-dark text-center small">
-              <tr>
-                <th  style={{height:'59px'}}>F&R MATRICES</th>
-              </tr>
-            </thead>
-            <tbody className="small">
-              <tr><td className='text-center'>RECHAZADAS</td></tr>
-              <tr><td className='text-center'>AUDITORIA</td></tr>
-              <tr><td className='text-center'>POOL MATRICES</td></tr>
-              <tr><td className='text-center'>VALIDAR PB TEL </td></tr>
-              <tr><td className='text-center'>PENDIENTES</td></tr>
-              <tr><td className='text-center'>ESTATUS CD</td></tr>
             </tbody>
           </table>
         </div>

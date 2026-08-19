@@ -6,7 +6,7 @@ import Inicio from './Componentes/Inicio';
 import React, {useState, useEffect} from 'react';
 import LoginForm from './Componentes/LoginForm';
 import AgregarUsuario from './Componentes/AgregarUsuario';
-import MatrizCD from './Componentes/MatrizCD';
+import MatrizCD from './Componentes/MatrizCD'
 import NuevaPO from './Componentes/NuevaPO';
 import HistorialContenedor from './Componentes/materialReutilizable/historialContenedor';
 import Administrador_documentos from './Componentes/Vistas_Onboarding/Administrador_documentos';
@@ -21,6 +21,9 @@ import MenuFormatos from './Componentes/Formatos/MenuFormatos';
 import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
 import MenuSocMatriz from './Componentes/MenuMatriz-Soc/MenuSocMatriz';
 import CalculadoraC from './Componentes/CalculadoraC';
+import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
+import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
+import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
 
 function App() {
   
@@ -30,7 +33,10 @@ function App() {
   const[error,setError] =useState("");
 
 const Login = async usuarioinfo =>{
-    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  || usuarioinfo.perfil === "Matr/Soc"  ) {
+    if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  
+         usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || 
+         usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  || 
+         usuarioinfo.perfil === "Matr/Soc" ||  usuarioinfo.perfil === "ControlPlanta" ) {
       setUser({
         username:usuarioinfo.usuario,
         password:usuarioinfo.constrasena})
@@ -51,7 +57,6 @@ const Login = async usuarioinfo =>{
           username:usuarioinfo.usuario,
           password:usuarioinfo.constrasena})
           localStorage.setItem('username', usuarioinfo)
-          // localStorage.setItem('password', usuarioinfo)   
       }else{
       setError("Usuario / Contraseña incorrectos")
     }
@@ -166,8 +171,22 @@ if(almacenlocalusuario === null){
           <Route path='record/importaciones/controldocumental/matrizcd' element={<MatrizCD/>}></Route>    
           <Route path='importaciones/controldocumental/matrizcd/NuevaPO' element={<NuevaPO/>}></Route>    
           <Route path='importaciones/controldocumental/matrizcd/historialCD' element={<HistorialContenedor/>}></Route>    
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
 
-
+  }    else if (localStorage.getItem("perfil") === "ControlPlanta") {
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<Menu_Matriz_Soc_Planta/>}></Route>
+          <Route  path='record/planta/soc_planta' element={<Soc_Planta/>}></Route>
+          <Route  path='record/planta/matriz_planta' element={<Matriz_Planta/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>
@@ -175,6 +194,7 @@ if(almacenlocalusuario === null){
     )
 
   }
+
 
 //   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
 //   return(

@@ -100,6 +100,10 @@ class Clienteservice {
     return axios.get(Clientes_BASE_REST_API + "/familia/" + Codigo)
   }
 
+  actualizarBasesPlanta(){            // falta poner esta actualizacion en algun boton !!!!!! Evaluar si le dejamos el boton abierto a Rodrigo
+    return axios.post(documentos_AUDIT + "/actualizarbases/actualizar/planta")
+  }
+
   actualizarBases1(){
     return axios.post(documentos_AUDIT + "/actualizarbases/actualizar2")
   }
@@ -182,7 +186,7 @@ getlogall() {
     return axios.get(`${Clientes_BASE_REST_API}/log-all`);
   }
   getMatrizCalculadoraAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/matrizcalculadoraall")
+  return axios.get(documentos_AUDIT + "/actualizarbases/matrizcalculadoraall")
 }
 actualizarBases5(){
   return axios.post(documentos_AUDIT + "/actualizarbases/matrizcalc")
@@ -255,5 +259,11 @@ getRevisados(){
 getWksh(){
   return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
 }
+  // peticiones planta
+get_buffer_planta(){
+  return axios.get(documentos_AUDIT + "/planta/soc_completo")
+}
+
+
 }
 export default new Clienteservice();

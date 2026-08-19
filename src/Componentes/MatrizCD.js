@@ -2,10 +2,10 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import { Link } from "react-router-dom";
 import { Dialog, DialogContent, DialogTitle, Tooltip  } from "@mui/material";
-import { BUs } from "./materialReutilizable/RangosReusables"
+import { BUs } from "../Componentes/materialReutilizable/RangosReusables"
 import { default as ReactSelect, components } from "react-select";
-import { obtenerEstadoEnvio, LiberadaPorMatrices } from "./materialReutilizable/AreaDestino";
-import { ExportarExcelMATRIZ } from './materialReutilizable/ExportarExcelMATRIZ'
+import { obtenerEstadoEnvio, LiberadaPorMatrices } from "../Componentes/materialReutilizable/AreaDestino";
+import { ExportarExcelMATRIZ } from '../Componentes/materialReutilizable/ExportarExcelMATRIZ'
 import {
   DataGrid,
   GridToolbarContainer,
@@ -17,7 +17,7 @@ import Stack from "@mui/material/Stack";
 import { useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 // import "./button.css";
-import { GeneraHistorial } from "./materialReutilizable/GenerarHistorial";
+import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
 function FullFeaturedCrudGrid() {
   const [loading, setLoading] = React.useState(false);
   const [filatrat, setfilatrat] = React.useState([]);
