@@ -1,16 +1,16 @@
 import axios from "axios";
-const Clientes_BASE_REST_API =  "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental";
-// const Clientes_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental";
-const Usuario_BASE_REST_API = "http://172.18.2.87:8080/Recordatorios/importaciones/usuarios/usuarios";
-// const Usuario_BASE_REST_API =  "http://localhost:8080/importaciones/usuarios/usuarios";
-const matrizcd_BASE_REST_API =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/matrizcd";
-// const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental/matrizcd";
-const matrizcd_HISTORIAL =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/historial";
-// const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
-const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
-// const documentos_AUDIT =  "http://localhost:8080/importaciones";
-const Link_Inicial =   "http://172.18.2.87:8080/record";
-// const Link_Inicial =  "http://localhost:8080/record";
+// const Clientes_BASE_REST_API =  "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental";
+const Clientes_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental";
+// const Usuario_BASE_REST_API = "http://172.18.2.87:8080/Recordatorios/importaciones/usuarios/usuarios";
+const Usuario_BASE_REST_API =  "http://localhost:8080/importaciones/usuarios/usuarios";
+// const matrizcd_BASE_REST_API =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/matrizcd";
+const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental/matrizcd";
+// const matrizcd_HISTORIAL =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/historial";
+const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
+// const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
+const documentos_AUDIT =  "http://localhost:8080/importaciones";
+// const Link_Inicial =   "http://172.18.2.87:8080/record";
+const Link_Inicial =  "http://localhost:8080/record";
 
 class Clienteservice {
   linkInicio(){
@@ -90,7 +90,6 @@ class Clienteservice {
   putNuevaAsignacion(estadoAsignacion){
       return axios.put(Clientes_BASE_REST_API + "/seguimientooc/asignacionuser"  ,  estadoAsignacion )    
   }
-
 
   getProveedor (noProveedor){
     return axios.get(Clientes_BASE_REST_API + "/proveedor/" + noProveedor)
@@ -260,10 +259,19 @@ getWksh(){
   return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
 }
   // peticiones planta
+  get_bufferSinTots(){
+    return axios.get(documentos_AUDIT + "/planta/buffer_sin_totales")
+  }
 get_buffer_planta(){
-  return axios.get(documentos_AUDIT + "/planta/soc_completo")
+  return axios.get(documentos_AUDIT + "/planta/buffer_planta")
 }
 
+get_soc_planta(){
+  return axios.get(documentos_AUDIT + "/planta/soc/alldata")
+}
+Put_Soc_Planta(id , registroPlanta){
+  return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
+}
 
 }
 export default new Clienteservice();

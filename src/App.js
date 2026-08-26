@@ -171,6 +171,7 @@ if(almacenlocalusuario === null){
           <Route path='record/importaciones/controldocumental/matrizcd' element={<MatrizCD/>}></Route>    
           <Route path='importaciones/controldocumental/matrizcd/NuevaPO' element={<NuevaPO/>}></Route>    
           <Route path='importaciones/controldocumental/matrizcd/historialCD' element={<HistorialContenedor/>}></Route>    
+          <Route path='importaciones/controldocumental/matrizcd/calculadora' element={<CalculadoraC/>}></Route>
         </Routes>
       </div>
       </BrowserRouter>
