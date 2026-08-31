@@ -4,7 +4,6 @@ import ClientesService from '../../service/ClientesService';
 import { CircularProgress , Hidden, Stack } from '@mui/material';
 import '../../Componentes/button.css'
 import { gruposColsSocPlanta } from './material_reutilizable_planta';
-import { registerLocale } from 'react-datepicker';
 
 function Soc_Planta() {
     const [tablatemp , settablatemp] = useState([]);
@@ -186,7 +185,7 @@ const nuevo_modificar_Po = (e) => {
       <form onSubmit={(e) => e.preventDefault()} className="container max-w-lg p-4 bg-white rounded shadow-sm border">
         <div className="pb-4 mb-4 border-bottom">
           <h3 className="h5 text-dark mb-3">{existe ? "Modificar PO" : "Nueva PO"}</h3>
-        <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap:'1px', textAlign:'left' , minWidth:'70%'  }}>
+        <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap:'5px', textAlign:'left' , minWidth:'70%'  }}>
               <div>
                   <label className="form-label text-secondary small fw-medium">PO</label>
                   <input type="number" className="form-control" value={Registro.po_th === "" ? Registro.po : Registro.po_th} />
@@ -235,40 +234,67 @@ const nuevo_modificar_Po = (e) => {
                   <label className="form-label text-secondary small fw-medium">Colocador</label>
                   <input type="text" className="form-control" value={Registro.colocador} />
               </div>
-
+              <div>
+                  <label className="form-label text-secondary small fw-medium">ETD</label>
+                  <input disabled type="date" className="form-control" value={Registro.etd} />
+              </div>
         </div>
         </div>
 
-        <div className="pb-4 mb-4 border-bottom">
-          <h3 className="h5 text-dark mb-3">2. Fechas</h3>
-          <div className="row g-3">
-            <div className="col-12 col-md-6">
-              <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
-              <input type="date" className="form-control" />
-            </div>
-            <div className="col-12 col-md-6">
-              <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
-              <input type="date" className="form-control" />
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <h3 className="h5 text-dark mb-3">3. Estatus</h3>
-          <div className="col-12">
-            <label className="form-label text-secondary small fw-medium">Estatus Actual</label>
-            <select className="form-select">
-              <option value="activo">Activo</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
-          </div>
+        <div  style={{padding:'1%' , marginLeft:'1%' ,display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap:'15px', textAlign:'left' , minWidth:'70%'  }}>
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
+              <div>
+                    <label className="form-label text-secondary small fw-medium">Fecha de Inicio</label>
+                    <input type="date" className="form-control" />
+                    <label className="form-label text-secondary small fw-medium">Fecha de Término</label>
+                    <input type="date" className="form-control" />
+              </div>  
         </div>
 
         <button type="submit" className="btn btn-primary w-100 fw-bold">
           Guardar Cambios
         </button>
-
       </form>
   </div>
 </div>
