@@ -24,6 +24,7 @@ import CalculadoraC from './Componentes/CalculadoraC';
 import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
 import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
+import Menu_Planta_Planta from './Componentes/Planta_Matr_Soc/Menu_Planta_Planta';
 
 function App() {
   
@@ -36,7 +37,8 @@ const Login = async usuarioinfo =>{
     if ( usuarioinfo.perfil === "admin" ||  usuarioinfo.perfil === "usuarioinicial"  ||  
          usuarioinfo.perfil === "usuarioseguimiento" || usuarioinfo.perfil ==="ControlDocumental" || 
          usuarioinfo.perfil ==="Documentos" || usuarioinfo.perfil === "SeguimientoOC1"  || 
-         usuarioinfo.perfil === "Matr/Soc" ||  usuarioinfo.perfil === "ControlPlanta" ) {
+         usuarioinfo.perfil === "Matr/Soc" ||  usuarioinfo.perfil === "ControlPlanta" 
+         ||  usuarioinfo.perfil === "CalculadoraPlanta"  ) {
       setUser({
         username:usuarioinfo.usuario,
         password:usuarioinfo.constrasena})
@@ -196,6 +198,22 @@ if(almacenlocalusuario === null){
 
   }
 
+      else if (localStorage.getItem("perfil") === "CalculadoraPlanta") {
+    return (
+      <div>
+         <BrowserRouter>
+      <HeaderComponent/>
+        <div className='container'>
+        <Routes>
+          <Route  path='record/' element={<Menu_Planta_Planta/>}></Route>
+          <Route  path='record/Calculadoraplanta' element={<CalculadoraC/>}></Route>
+        </Routes>
+      </div>
+      </BrowserRouter>
+      </div>
+    )
+
+  }
 
 //   if ( localStorage.getItem("perfil") === "admin" ||  localStorage.getItem("perfil") === "usuarioinicial"  ||  localStorage.getItem("perfil") === "usuarioseguimiento") {
 //   return(

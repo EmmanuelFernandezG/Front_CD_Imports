@@ -23,7 +23,7 @@ function Matriz_Planta() {
     <div style={{ textAlign: 'center', marginTop: '20px' }}>
       <p>Tiempo transcurrido: {segundos} segundos</p>
     <div>
-      Ancho de pantalla: {Ancho}
+      Ancho de pantalla: {ancho}
     </div>
     </div>
   );

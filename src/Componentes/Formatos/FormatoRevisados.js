@@ -304,7 +304,7 @@ return (
                 <label style={{width:'75px' , textWrap:'pretty'}}>Fecha </label>
                 <input disabled style={{backgroundColor:'#f8f8f8'}} type='date' value={fechaFormateada} />
                 <label style={{width:'75px' , textWrap:'pretty' , marginLeft:'10%'}}>FOLIO</label>
-                <input value={(leerfolio === [] || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled />
+                {/* <input value={(leerfolio === [] || leerfolio.id === undefined )? "" : "REV-" + String(leerfolio.id).padStart(3, '0')} disabled /> */}
             </section> 
             <section style={{padding:'20px', alignItems:'center',display:'flex' , gap:'1rem' ,border:'solid #d1cece 1px ' }}>
                 <input style={{marginLeft:'90px' , transform: 'scale(1.3)'}} onClick={(e)=>{ resultado(e)}} type='radio' id="tipoRev" name="cambio" value="modificacion" checked={leerfolio?.tipoRev === "modificacion" } />

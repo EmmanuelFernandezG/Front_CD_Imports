@@ -233,7 +233,7 @@ const handleProveedorCalc=(valor)=>{
       filaAct.bu = mostarbu;
       filaAct.comprador= (cont?.drsr+"-"+cont?.drjr+"-"+cont?.gerenteBU+"-"+cont?.comprador) || "";
       filaAct.planeador= (cont?.gteplan+"-"+cont?.planPlan) || "";
-      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "";
+      filaAct.tipomatriz = tip?.tipomatriz || tip?.tipoMatriz || "N/A";
       filaAct.etd = qtyprc?.etd || "";
       filaAct.tc_MP = registroWksh?.tc_MP || "";
       filaAct.cantidad = cantEncontrada;

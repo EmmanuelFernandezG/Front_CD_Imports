@@ -69,6 +69,9 @@ export const tipoOrden=[
 export const centro=[
   "P5","STUL", "SRTI-DIRECTOS"
 ]
+export const almacenManual=[
+  "20", "45", "88"
+]
 
 export const cambios = {
   CAD: 12.5548,
