@@ -38,10 +38,10 @@ function Socs() {
     const [tablahistorial,settablahistorial] = useState(true);
     const [historialSOC , sethistorialSOC] = useState([]);
     const [RegistroHistorialSoc, setRegistroHistorialSoc] = useState({});
-  const [visibilidadSOC,setvisibilidadSOC] = useState(true);
-  const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
-  const usuarioLocal = localStorage.getItem("username");
-  const [dialogo,setdialogo]= useState(false);
+    const [visibilidadSOC,setvisibilidadSOC] = useState(true);
+    const [visibilidadLOGs , setvisibilidadLOGs] = useState(true);    
+    const usuarioLocal = localStorage.getItem("username");
+    const [dialogo,setdialogo]= useState(false);
     useEffect (()=>{
       listarhistoriaSoc();
       proveedoresall();
@@ -193,6 +193,7 @@ const contactosall = async () => {
           await ClientesService.postNuevoSOC(registro);
         } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
+            console.log(registro);
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
                 const promesas = responseMatriz.data.map(itemMatriz => {
@@ -212,7 +213,10 @@ const contactosall = async () => {
         const opHora = { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
         const fecha = new Date().toLocaleDateString('zh-Hans-CN', opFecha).replace(/\//g, '-'); 
         const hora = new Date().toLocaleTimeString('es-MX', opHora);
+        
         const fechaYHora = `${fecha} ${hora}`;
+
+        const logsAll = await ClientesService.getlogall();
         const logs = logsAll.data || [];
         const logsPO = logs.filter(l => String(l.nopo).trim() === String(registro.foliott).trim());
         const logAnterior = logsPO[logsPO.length - 1];
@@ -228,11 +232,11 @@ const contactosall = async () => {
         const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || ""
           , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
 
-      const exists = logsAll.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
+      const exists = logs.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
       if (exists === false){
          await ClientesService.new_log(datosLog);
       }else{
-          const total = logsAll.filter(
+          const total = logs.filter(
             logitem => logitem.nopo === registro.foliott || logitem.nopo === registro.nooc
           );
           await Promise.all(total.map(item => ClientesService.saveLog({ id: item.id, ...datosLog}))
@@ -448,7 +452,7 @@ if (loading) {
               <select hidden={mostratusuario} onChange={(evento)=>( construyeAsig(evento))} className='asistentepos'>
                   <option>Seleccione</option>
                   <option>dvegas</option>
-                  <option>kapedreiras</option>
+                  <option>fargoteh</option>
                   <option>fnunezm</option>
                   <option>afloresar</option>
                 </select>
@@ -668,8 +672,8 @@ if (loading) {
             </Stack>
           </Stack>
     <Stack style={{marginLeft:"1%" , marginTop:".5%"}} direction="column">
-        <label>Envío de la O.</label>
-        <input  onChange={(e) => ActualizarRegistro(e)}  id='envio_de_laocal_proveedoreoc' type='date'  min={fechaMin} max={fechaMax} onKeyDown={(e) => e.preventDefault()} defaultValue={registro.envio_de_laocal_proveedoreoc}  style={{width:"130%",marginTop:"6%"}} / >
+        <label>Envío de la O.C.</label>
+        <input  onChange={(e) => ActualizarRegistro(e)}  id='envio_de_laocal_proveedoreoc' type='date' defaultValue={registro.envio_de_laocal_proveedoreoc}  style={{width:"130%",marginTop:"6%"}} / >
    </Stack>     
                  <Stack sx={{marginLeft:'5%',marginTop:'2%', width:'450px', height:'50%'}} direction='row'>     
                     <label style={{marginLeft:"10px"}}>REVISADO</label>
@@ -679,12 +683,13 @@ if (loading) {
                     <label style={{marginLeft:"18px"}}>REIMP</label>
                     <input style={{marginLeft:"2%", width:"10%", height:"24px"}}  id='reimp' onChange={(e) => ActualizarRegistro(e)} defaultValue={registro.reimp} />
                     <Stack direction='column'>
-                    <label style={{marginLeft:'60%'}}>SOLICITADO POR:</label>
-                    <select style={{marginLeft:'60%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
+                    <label style={{marginLeft:'15%'}}>SOLICITADO POR:</label>
+                    <select style={{marginLeft:'5%'}} onChange={(e) => ActualizarRegistro(e)}  id='recepcion_de_la_proformarp' defaultValue={registro.recepcion_de_la_proformarp}>
                       <option></option>
                       <option>COLOCACIÓN</option>
                       <option>COMPRAS</option>
                     </select>
+                    
                     </Stack>
                   </Stack>
    </Stack>     

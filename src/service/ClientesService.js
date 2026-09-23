@@ -6,7 +6,7 @@ const Usuario_BASE_REST_API =  "http://localhost:8080/importaciones/usuarios/usu
 // const matrizcd_BASE_REST_API =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/matrizcd";
 const matrizcd_BASE_REST_API =  "http://localhost:8080/importaciones/controldocumental/matrizcd";
 // const matrizcd_HISTORIAL =   "http://172.18.2.87:8080/Recordatorios/importaciones/controldocumental/historial";
-const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
+ const matrizcd_HISTORIAL =  "http://localhost:8080/importaciones/controldocumental/historial";
 // const documentos_AUDIT =   "http://172.18.2.87:8080/Recordatorios/importaciones";
 const documentos_AUDIT =  "http://localhost:8080/importaciones";
 // const Link_Inicial =   "http://172.18.2.87:8080/record";
@@ -25,12 +25,15 @@ class Clienteservice {
   createClientes(Clientes) {
     return axios.post(Clientes_BASE_REST_API + "/matrizcd", Clientes);
   }
+  
   getClientesById(ClientesId) {
     return axios.get(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
+
   updateClientes(ClientesId, Clientes) {
     return axios.put(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId, Clientes);
   }
+
   deleteClientes(ClientesId) {
     return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
@@ -116,6 +119,9 @@ class Clienteservice {
   actualizarBases4(){
     return axios.post(documentos_AUDIT + "/controldocumental/refreshbases")
   }
+  actualizarBases5(){
+  return axios.post(documentos_AUDIT + "/actualizarbases/matrizcalc")
+}
 
   getHistorialSoc(codigo){
     return axios.get(documentos_AUDIT + "/historialsoc/" + codigo)
@@ -157,6 +163,15 @@ class Clienteservice {
   getSocHistorial(){
     return axios.get(Clientes_BASE_REST_API + "/soccompleto/")
   }
+
+  getSocHistorialCalcu(){
+    return axios.get(Clientes_BASE_REST_API + "/soccompleto/Calcu/")
+  }
+
+  getDirectosAll(){
+    return axios.get(Clientes_BASE_REST_API + "/directosall/")
+  }
+  
   getCondMatrices(folio , nooc){
   const url = Clientes_BASE_REST_API + "/condmatrices/" + folio + "/" + nooc;
   return axios.get(url);  
@@ -178,6 +193,10 @@ getcontactosall(){
   return axios.get(Clientes_BASE_REST_API + "/contactos/all")
 }
 
+getContactosPlantaAll(){
+  return axios.get(documentos_AUDIT + "/actualizarbases/contactosplantaall")
+}
+
 getproveedoresall (){
   return axios.get(Clientes_BASE_REST_API + "/proveedores/all")
 }
@@ -187,9 +206,7 @@ getlogall() {
   getMatrizCalculadoraAll(){
   return axios.get(documentos_AUDIT + "/actualizarbases/matrizcalculadoraall")
 }
-actualizarBases5(){
-  return axios.post(documentos_AUDIT + "/actualizarbases/matrizcalc")
-}
+
 saveLog(datosLog) {
     return axios.put(Clientes_BASE_REST_API + "/guardar", datosLog);
   }
@@ -266,12 +283,42 @@ get_buffer_planta(){
   return axios.get(documentos_AUDIT + "/planta/buffer_planta")
 }
 
+getControlPIsAll(){
+  return axios.get(documentos_AUDIT +"/actualizarbases/controlpisall")
+}
+
+/* getBufferPlantaAll(){
+  return axios.get(documentos_AUDIT +"/actualizarbases/bufferplantaall")
+} */
+
+getCodigosPlaneadorAll(){
+  return axios.get(documentos_AUDIT +"/CodigosPlanPlanta/codigosplaneadorall")
+}
+
+saveControlPIs(datos){
+  return axios.put(Link_Inicial + "/seguimiento/planta/guardar", datos)
+}
+
+getFeriadosAll(){
+  return axios.get(documentos_AUDIT + "/feriados" + "/todos");
+}
+
+postFeriados(datos){
+  return axios.post(documentos_AUDIT + "/feriados" +"/nuevo", datos)
+}
+
 get_soc_planta(){
   return axios.get(documentos_AUDIT + "/planta/soc/alldata")
 }
 Put_Soc_Planta(id , registroPlanta){
   return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
 }
+get_Planeadores_Planta(){
+  return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
+}
 
+  getnuevapi(nopos){
+    return axios.get(Link_Inicial + "/seguimiento/planta/controlpis/nuevapi/" + nopos);
+  }
 }
 export default new Clienteservice();

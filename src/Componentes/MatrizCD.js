@@ -218,6 +218,7 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases4(); 
     await ClientesService.actualizarBases5();
     await ClientesService.postRevisados(); 
+    await ClientesService.actualizarBasesPlanta(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {

@@ -203,6 +203,7 @@ const columns = [
           }
         },
         {field: 'comentarios_reimp', headerName: 'Comentarios', width: 150, headerClassName: "gris", editable: true},
+        {field: 'z_estatus_cd', headerName: 'POSICIÓN', width: 150, headerClassName: "trial" ,type: "singleSelect", valueOptions: ["A", "DP", "C", "Colocación", "SAP", "Directos"], editable: true},
     ];
     
     const gruposDeColumnas = [
@@ -299,6 +300,16 @@ const columns = [
           { field: 'comentarios_reimp' }
         ],
       },
+            {
+        groupId: 'status_control_doc',
+        headerName: 'STATUS CD',
+        headerClassName: "ama",
+        headerAlign: 'center',
+        children: [
+          { field: 'z_estatus_cd' }
+        ],
+      },
+
     ];
 
 useEffect(() => {
@@ -418,7 +429,7 @@ const handleVerLogPos = async () => {
         ...newRow, 
         id: `TEMP-${newRow.foliott}-${siguienteNumLog}`,
         status_reimp: 'Abierta', numero_reimp: siguienteNumLog, reciboctrlpos_ctrl: hoyfecha, fecha_reciboctrl: hoyfecha, autorizacion_previa: null, 
-        comentarios_doc: '', fecha_final_plan: null, comentarios_plan: '', fecha_final_compras: null, comentarios_compras: '', comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
+         comentarios_reimp: '', rea: reaValor, ubicacion_en_archivo: eaValor, reimp:reimpValor, fecha_recibo_log: fechaHora
     }
     }
       setRegistros((prev)=>{
@@ -438,6 +449,7 @@ const handleVerLogPos = async () => {
           console.log(errr)
         })
       }else{
+        console.log(filaCerrada)
         ClientesService.saveLog(filaCerrada)
             .catch(err => console.log(err));
       }

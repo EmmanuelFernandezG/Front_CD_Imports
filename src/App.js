@@ -1,7 +1,7 @@
 import './App.css';
 import  ListaComponentes from './Componentes/ListaComponentes'
 import HeaderComponent from './Componentes/HeaderComponent'
-import {  BrowserRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter as BrowserRouter, Route, Routes } from 'react-router-dom';
 import Inicio from './Componentes/Inicio';
 import React, {useState, useEffect} from 'react';
 import LoginForm from './Componentes/LoginForm';
