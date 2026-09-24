@@ -683,13 +683,12 @@ function FormatoTrial() {
             </div>
             <div className="col-md-4">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre Proveedor</label>
-              <input type="text" id="nombreProveedor" className="form-control form-control-sm text-center" value={formData.nombreProveedor} onChange={handleChange} />
+                <textarea id="nombreProveedor" className="form-control form-control-sm text-center" rows="1" style={{ resize: 'none',  height:(formData.nombreProveedor).length > 50 ? '60px' : '31px'} }  value={formData.nombreProveedor} onChange={handleChange} />
             </div>
             <div className="col-md-1" >
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Clave</label>
               <select id="claveProveedor" className="form-select form-select-sm text-center" 
                 value={formData.claveProveedor} onChange={(e) => handleClaveOTerminoChange('claveProveedor', e.target.value)}> 
-                <option value=""></option>
                 {formData.claveProveedorCruce && formData.claveProveedorCruce !== 'ANEXO' && (
                   <option value={formData.claveProveedorCruce}>{formData.claveProveedorCruce}</option>
                 )}
@@ -698,9 +697,8 @@ function FormatoTrial() {
             </div>
             <div className="col-md-4">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Término de Pago</label>
-              <select id="terminoPago" className="form-select form-select-sm text-center" 
+              <select id="terminoPago" className="form-select form-select-sm text-center w-auto" 
                 value={formData.terminoPago} onChange={(e) => handleClaveOTerminoChange('terminoPago', e.target.value)}>
-                <option value=""></option>
                 {formData.terminoPagoCruce && formData.terminoPagoCruce !== 'ANEXO' && (
                   <option value={formData.terminoPagoCruce}>{formData.terminoPagoCruce}</option>
                 )}
@@ -739,32 +737,32 @@ function FormatoTrial() {
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
               <input type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
             </div>
-            <div className="col-md-1"> 
-              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
-              <input type="text" id="spec" className="form-control form-control-sm required text-center" value={formData.spec} onChange={handleChange} />
-            </div>
             <div className="col-md-2">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
-              <select id="razonSocial" className="form-select form-select-sm text-center" value={formData.razonSocial} onChange={handleChange}>
+              <select id="razonSocial" className="form-select form-select-sm text-center w-auto" value={formData.razonSocial} onChange={handleChange}>
                 <option value="">Seleccionar</option>
-                <option>{formData.razonSocial}</option>
                 {razonSocial.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>))}
               </select>
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3">
               <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Tipo de Orden</label>
-              <select id="tipoOrden" className="form-select form-select-sm text-center" value={formData.tipoOrden} onChange={handleChange}>
+              <select id="tipoOrden" className="form-select form-select-sm text-center w-auto" value={formData.tipoOrden} onChange={handleChange}>
                 <option value="">Seleccionar</option>
-                <option>{formData.tipoOrden}</option>
                 {tipoOrden.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>))}
               </select>
             </div>
+            <div style={{marginLeft:'2%' , width:'140px'}} className="col-md-1"> 
+              <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
+              <textarea type="text" id="spec" className="form-control form-control-sm required text-center" value={formData.spec} onChange={handleChange} 
+              style={{ width:'140%', resize: 'none',  height:(formData.spec).length > 17 ? '60px' : '31px'} }></textarea>
+            </div>
+
           </div>
         </div>
 
@@ -837,7 +835,7 @@ function FormatoTrial() {
             <span className="fw-bold d-block mb-1">Centro:</span>
             <div className="d-flex justify-content-start gap-2 pt-1">
               <div className="col-7 border-secondary ms-2">
-                <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center" value={formData.centro} onChange={handleChange}>
+                <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center w-auto" value={formData.centro} onChange={handleChange}>
                   <option value="">Seleccionar</option>
                   {centro.map((item) => (
                     <option key={item} value={item}>
@@ -917,7 +915,6 @@ function FormatoTrial() {
               <div className="d-flex align-items-center gap-2">
                 <label className="fw-bold small text-muted mb-0">Término de pago:</label>
                 <select className="form-select form-select-sm" value={tabla.c_pag || ''} onChange={(e) => handleCPagChange(tIdx, e.target.value)} style={{ width: '110px'}}>
-                  <option value=""></option>
                   {listaCPag.map((item, idx) => (
                     <option key={idx} value={item.c_pag}>
                       {item.c_pag}
@@ -997,7 +994,6 @@ function FormatoTrial() {
                         {formData.almacen === "Manual" && (
                           <td className="px-2" style={{ minWidth: '130px' }}>
                             <select id={`almacenM-${tIdx}-${fIdx}`} className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center text-truncate shadow-none px-1" value={fila.almacenM || ''} onChange={(e) => handleFilaChange(tIdx, fIdx, 'almacenM', e.target.value)}>
-                              <option value=""></option>
                                 {almacenManual.map((item) => (
                                   <option key={item} value={item}>
                                     {item}
