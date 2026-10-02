@@ -1,5 +1,4 @@
 import './App.css';
-import ListaComponentes from './Componentes/ListaComponentes';
 import HeaderComponent from './Componentes/HeaderComponent';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import Inicio from './Componentes/Inicio';
@@ -14,8 +13,6 @@ import Socs from './Componentes/ComponentesSOC/Socs';
 import Sesiones from './Componentes/Vistas_Onboarding/Sesiones';
 import Inscritos from './Componentes/Vistas_Onboarding/Inscritos';
 import SocsLog from './Componentes/ComponentesSOC/SocsLog';
-import ClientesService from './service/ClientesService';
-import { ContactsOutlined } from '@mui/icons-material';
 import FormatoTrial from './Componentes/Formatos/FormatoTrial';
 import MenuFormatos from './Componentes/Formatos/MenuFormatos';
 import FormatoRevisados from './Componentes/Formatos/FormatoRevisados';
@@ -25,6 +22,7 @@ import Soc_Planta from './Componentes/Planta_Matr_Soc/Soc_Planta';
 import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_Soc_Planta';
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
 import Menu_Planta_Planta from './Componentes/Planta_Matr_Soc/Menu_Planta_Planta';
+import Nueva_pi_planta from './Componentes/Planta_Matr_Soc/Nueva_pi_planta';
 
 function App() {
   const almacenlocalusuario = localStorage.getItem('username');
@@ -189,6 +187,7 @@ function App() {
                 <Route path="/record" element={<Menu_Matriz_Soc_Planta />} />
                 <Route path="/record/planta/soc_planta" element={<Soc_Planta />} />
                 <Route path="/record/planta/matriz_planta" element={<Matriz_Planta />} />
+                <Route path="/record/planta/matriz_planta/Nueva_pi" element={<Nueva_pi_planta />} />
               </Routes>
             </div>
           </HashRouter>

@@ -218,7 +218,7 @@ const actualizar_Bases = async () => {
     await ClientesService.actualizarBases4(); 
     await ClientesService.actualizarBases5();
     await ClientesService.postRevisados(); 
-    await ClientesService.actualizarBasesPlanta(); 
+    // await ClientesService.actualizarBasesPlanta(); 
   } catch (err) {
     console.error("Error en la actualización:", err);
   } finally {
@@ -550,16 +550,11 @@ valueGetter: (params) =>
         editable: false,
         type: "date",
         headerClassName: "gris",
-
         valueGetter: (value) => {
           if (!value) return null;
-
-          // evita desfase por UTC
           const [year, month, day] = value.split("T")[0].split("-");
-
           return new Date(year, month - 1, day);
         },
-
         valueFormatter: (value) => {
           if (!value) return "";
 

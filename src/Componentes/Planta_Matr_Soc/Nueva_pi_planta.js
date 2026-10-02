@@ -6,7 +6,7 @@ import {getBreadcrumbsUtilityClass, Input } from "@mui/material";
 import { BUs } from "../materialReutilizable/RangosReusables";
 import { attachPinnedStyle, gridVirtualizationEnabledSelector } from "@mui/x-data-grid/internals";
 
-function NuevaPI(){
+function Nueva_pi_planta(){
     const navigate = useNavigate();
     const [nopos,setNopos]=useState("");
     const [view, setView]=useState();
@@ -308,4 +308,4 @@ function NuevaPI(){
     )
 }
 
-export default NuevaPI;
+export default Nueva_pi_planta;

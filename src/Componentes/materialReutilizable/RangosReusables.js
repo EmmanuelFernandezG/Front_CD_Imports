@@ -25,6 +25,7 @@ export const BUs = [
   "VOLTECK 1",
   "VOLTECK 2",
   "VOLTECK 3",
+  "Proveedores alternos"
 ];
 
 export const anchos = [
@@ -148,4 +149,3 @@ export const other_items = {
 2940: {clave:"Otros Cargos libres de cargo",tipo:"lista",valor:["SER","PZAS"]},
 2941: {clave:"Producto para evaluación libres de cargo",tipo:"string",valor:""}
 };
-

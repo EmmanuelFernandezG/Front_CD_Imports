@@ -284,7 +284,7 @@ get_buffer_planta(){
 }
 
 getControlPIsAll(){
-  return axios.get(documentos_AUDIT +"/actualizarbases/controlpisall")
+  return axios.get(documentos_AUDIT +"/record/seguimiento/planta/controlpisall")
 }
 
 /* getBufferPlantaAll(){
@@ -296,15 +296,15 @@ getCodigosPlaneadorAll(){
 }
 
 saveControlPIs(datos){
-  return axios.put(Link_Inicial + "/seguimiento/planta/guardar", datos)
+  return axios.put(documentos_AUDIT + "/record/seguimiento/planta/guardar", datos)
 }
 
 getFeriadosAll(){
-  return axios.get(documentos_AUDIT + "/feriados" + "/todos");
+  return axios.get(documentos_AUDIT + "/feriados/todos");
 }
 
 postFeriados(datos){
-  return axios.post(documentos_AUDIT + "/feriados" +"/nuevo", datos)
+  return axios.post(documentos_AUDIT + "/feriados/nuevo", datos)
 }
 
 get_soc_planta(){
@@ -312,6 +312,9 @@ get_soc_planta(){
 }
 Put_Soc_Planta(id , registroPlanta){
   return axios.put(documentos_AUDIT + "/planta/soc/planta/" + id , registroPlanta)
+}
+postear_Soc_planta(registro){
+  return axios.post(documentos_AUDIT + "/planta/soc/nuevo/" , registro)
 }
 get_Planeadores_Planta(){
   return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
