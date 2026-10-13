@@ -23,6 +23,7 @@ import Menu_Matriz_Soc_Planta from './Componentes/Planta_Matr_Soc/Menu_Matriz_So
 import Matriz_Planta from './Componentes/Planta_Matr_Soc/Matriz_Planta';
 import Menu_Planta_Planta from './Componentes/Planta_Matr_Soc/Menu_Planta_Planta';
 import Nueva_pi_planta from './Componentes/Planta_Matr_Soc/Nueva_pi_planta';
+import Validar_Proveedor from './Componentes/ComponentesSOC/Validar_Proveedor';
 
 function App() {
   const almacenlocalusuario = localStorage.getItem('username');
@@ -166,6 +167,7 @@ function App() {
               <Routes>
                 <Route path="/record" element={<MenuSocMatriz />} />
                 <Route path="/record/Soc" element={<Socs />} />
+                <Route path="/record/validprov" element={<Validar_Proveedor />} />
                 <Route path="/importaciones/controldocumental/matrizcd/log-detalle" element={<SocsLog />} />
                 <Route path="/record/Inicio" element={<Inicio />} />
                 <Route path="/record/importaciones/controldocumental/matrizcd" element={<MatrizCD />} />

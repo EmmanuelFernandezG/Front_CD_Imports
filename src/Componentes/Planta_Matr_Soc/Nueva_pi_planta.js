@@ -58,7 +58,6 @@ function Nueva_pi_planta(){
     const seg_corr = (x)=>{
       setCorreccionSegunda(x)
       setView(false)
-
       if(x==="Segunda"){
         setRegistro((prev) => {
           const { id, ...restoCampos } = prev;
@@ -92,7 +91,6 @@ function Nueva_pi_planta(){
       await ClientesService.saveControlPIs(datos);
 
       alert("Registro guardado");
-      console.log(datos);
     };
 
     const cerrar = ()=>{

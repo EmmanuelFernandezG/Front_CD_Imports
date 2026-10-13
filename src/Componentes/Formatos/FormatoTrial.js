@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BUs , razonSocial, tipoOrden,centro, cambios, almacenManual } from '../materialReutilizable/RangosReusables';
 import ClientesService from '../../service/ClientesService';
 import html2pdf from 'html2pdf.js';
-import { CircularProgress, Switch} from '@mui/material';
+import { CircularProgress, Stack, Switch} from '@mui/material';
 
 function FormatoTrial() {
   const celdaTabla= useRef({});
@@ -381,7 +381,7 @@ function FormatoTrial() {
   });
     const opciones = {
       margin:       [5, 5, 5, 5], //[superior, izquierdo, inferior, derecho]
-      filename:     `Trial_Order_${formData.noSap || 'Reporte'}.pdf`,
+      filename:     `${(formData.tipoOrden).split("-")[0]}_${formData.noSap}_${formData.nombreProveedor}_${formData.folio}.pdf`,
       image:        {type: 'jpeg', quality: 0.99 },
       html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm', format: 'letter', orientation: 'landscape' },
@@ -422,7 +422,9 @@ function FormatoTrial() {
       bu: formData.bu,
       fecha: formData.fecha,
       noProvSap: formData.noSap,
+      nombreprov: formData.nombreProveedor,
       claveProv: formData.claveProveedor,
+      buprovalternos: formData.buprovalternos,
       fabrica: formData.noFabrica,
       nombrefabrica: formData.nombreFabrica,
       spec: formData.spec,
@@ -443,7 +445,7 @@ function FormatoTrial() {
         folio:'',bu: '', responsable: '', fecha: new Date().toLocaleDateString('es-MX'),
         nombreProveedor:'', claveProveedor: '', terminoPago: '', moneda: '',
         noFabrica: '', nombreFabrica: '', spec: '', razonSocial: '',
-        tipoOrden: '', tipoContenedor: '', pod:'',
+        tipoOrden: '', tipoContenedor: '', pod:'', buprovalternos:'',
         almacen: '', puertoEmbarque: '', centro: '', sellos: {}, claveProveedorCruce: '', terminoPagoCruce: '', c_pag: '',
         descripcionCondPago: ''
       });
@@ -468,13 +470,13 @@ function FormatoTrial() {
       consultarRegistros();
     }, []);
 
-    //*** se ejecutaba solo si fabrica y no_proV_sap no eran vacios */
-    const buscarPorFolio= (folio=null) => { 
-      const folioABuscar= folio || folioBusqueda;
+    const buscarPorFolio = (folio=null) => {
+      console.log("entr")
+      const folioABuscar = folio || folioBusqueda;
       if (!folioABuscar.trim()) return;
-
-      ClientesService.getTrialporFolio(folioABuscar).then((response) => {
-        if (response.data) {
+        ClientesService.getTrialporFolio(folioABuscar).then((response) => {
+          console.log(response.data)
+          if (response.data) {
           const registro = response.data;
           let sellosRecuperados = {};
           if(registro.sellos){
@@ -520,7 +522,7 @@ function FormatoTrial() {
       id: registro.id,folio: registro.folio, bu: registro.bu, fecha: registro.fecha,
       noSap: registro.noProvSap,noFabrica: registro.fabrica,nombreFabrica: registro.nombrefabrica || nombreFabB, spec: registro.spec,
       razonSocial: registro.razonSocial,tipoOrden: registro.tipoOrden,tipoContenedor: registro.tipoContenedor,
-      pod:registro.pod, almacen: registro.almacen, puertoEmbarque: '', centro: registro.centro,
+      pod:registro.pod, buprovalternos: registro.buprovalternos, almacen: registro.almacen, puertoEmbarque: '', centro: registro.centro,
       requiereNom: registro.requiereNom, sellos: sellosRecuperados, nombreProveedor: '', 
       claveProveedor: registro.claveProv || '', responsable: responsableB, terminoPago: registro.terminoPago, 
       moneda: '', c_pag: registro.c_pag || '', descripcionCondPago: registro.descripcionCondPago || ''
@@ -561,8 +563,7 @@ function FormatoTrial() {
             if (!cPagUnicos.has(codigo)) {
               cPagUnicos.add(codigo);
               listaTemporal.push({ c_pag: codigo, descripcion: desc });
-            }
-            mapaTemporal[codigo] = desc;
+            } mapaTemporal[codigo] = desc;
           }
         });
         setListaCPag(listaTemporal);
@@ -575,11 +576,7 @@ function FormatoTrial() {
   const handleCPagChange = (tablaIndex, cPagSeleccionado) => {
     const nuevasTablas = tablas.map((tabla, tIdx) => {
       if (tIdx !== tablaIndex) return tabla;
-      return {
-        ...tabla,
-        c_pag: cPagSeleccionado,
-        descripcionCondPago: (descripciones[cPagSeleccionado] || '')
-      }
+      return {...tabla, c_pag: cPagSeleccionado, descripcionCondPago: (descripciones[cPagSeleccionado] || '')}
     })
   setTablas(nuevasTablas);
   }
@@ -648,6 +645,24 @@ function FormatoTrial() {
     }
   }
 
+  const validaDatosDescarga=()=>{
+    const camposLlenos=Boolean(formData.bu?.trim()) && Boolean(formData.noSap?.trim()) && Boolean(formData.razonSocial?.trim())
+      && Boolean(formData.tipoOrden?.trim()) && Boolean(formData.spec?.trim()) && Boolean(formData.tipoContenedor?.trim()) &&
+      Boolean(formData.almacen?.trim()) && Boolean(formData.centro?.trim()) && Boolean(formData.requiereNom?.trim()) && Boolean(formData.buprovalternos?.trim());
+    if( !camposLlenos){
+      return false
+    }
+    const tieneAlMenosUnCodigo = tablas.some(tabla => 
+      tabla.filas.some(fila => {
+        const codigo = String(fila.codigo || '').trim();
+        const clave = String(fila.clave || '').trim();
+        
+        return codigo !== '' && clave !== '';
+      })
+    )
+    return tieneAlMenosUnCodigo;
+  }
+
   if (loading) return (
     <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', padding: '30px', borderRadius: '12px', boxShadow: '0 0 15px rgba(0,0,0,0.2)', zIndex: 9999 }}>
       <CircularProgress />
@@ -671,27 +686,7 @@ function FormatoTrial() {
                 ))
               )}
             </datalist>
-            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={()=>buscarPorFolio}>Buscar</button>
-            {/*FOLIOS GENERADOS LISRA */}
-            {<div className="d-flex align-items-center gap-2">
-              <label htmlFor="foliosge" className="form-label fw-bold mb-0 text-nowrap">Registro de Folios:</label>
-              <select id="foliosge" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={(folioBusqueda|| "")} onChange={(e) => {
-                const folioSeleccionado = e.target.value;
-                //setFormData({ ...formData, folio: folioSeleccionado });
-                setFolioBusqueda(folioSeleccionado);
-                buscarPorFolio(folioSeleccionado)
-              }}>
-              <option value=""></option>
-              {registrosGuardados && registrosGuardados.length > 0 ? (
-                registrosGuardados.map((registro, index) => (
-                  <option key={index} value={registro.folio}>{registro.folio}</option>
-                ))
-              ) : (
-                <option disabled>No hay registros</option>
-              )}
-            </select>
-          </div>}
-
+            <button className="btn btn-primary btn-sm fw-bold px-4" onClick={()=> buscarPorFolio()}>Buscar</button>
           </div>
         </div>
       </div>
@@ -701,35 +696,48 @@ function FormatoTrial() {
             CONTROL Y AUTORIZACIÓN PARA CREACIÓN DE ÓRDENES DE COMPRA EN SAP / TRIAL ORDER
           </h4>
         </div>
-
-        <div className="row g-2 mb-3 align-items-center p-3">
-          <div className="col-md-3 d-flex align-items-center">
-            <label htmlFor="bu" className="form-label fw-bold mb-0 me-2 text-nowrap">BU:</label>
-            <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
-              <option value="">Seleccionar</option>
-              {formData.bu && !BUs.includes(formData.bu) && (
-                <option value={formData.bu}>{formData.bu}</option>
-              )}
-              {BUs.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>))}
-            </select>
-          </div>
-          <div className="col-md-4 d-flex align-items-center">
-            <label htmlFor="responsable" className="form-label fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
-            <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly onChange={handleChange} />
-          </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap ">Fecha:</label>
-            <input type="text" id="fecha" className="form-control form-control-sm border-0 text-center w-50 bg-transparent" value={formData.fecha} readOnly />
-          </div>
-          <div className="col-md-2 d-flex align-items-center justify-content-end">
-            <label htmlFor='folio' className='form-label fw-bold mb-0 me-2 text-nowrap'>Folio:</label>
-            <input type="text" id="folio" className="form-control form-control-sm text-center  border-0 border-bottom rounded-0 w-60 bg-transparent fw-bold text-danger" value={formData.folio} readOnly onChange={handleChange}/>
-          </div>
-        </div>
-
+        <div className="p-3">
+  <div className="d-flex justify-content-end mb-2">
+    <div className="d-flex align-items-center">
+      <label htmlFor="folio" className="fw-bold mb-0 me-2 text-nowrap">Folio:</label>
+      <input type="text" id="folio" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center fw-bold text-danger" value={formData.folio} readOnly />
+    </div>
+  </div>
+  <div className="row g-3 align-items-center">
+    <div className="col-md-3">
+      <div className="d-flex align-items-center">
+        <label htmlFor="bu" className="fw-bold mb-0 me-2 text-nowrap">BU:</label>
+        <select id="bu" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.bu} onChange={handleChange}>
+          <option value="">Seleccionar</option>
+          {formData.bu && !BUs.includes(formData.bu) && <option value={formData.bu}>{formData.bu}</option>}
+          {BUs.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
+      </div>
+    </div>
+    <div className="col-md-auto">
+      <div className="d-flex align-items-center">
+        <label htmlFor="buprovalternos" className="fw-bold mb-0 me-2 text-nowrap">BU Prov. Alternos:</label>
+        <select id="buprovalternos" className="form-select form-select-sm border-0 border-bottom rounded-0 bg-transparent text-center w-auto" value={formData.buprovalternos || ""} onChange={handleChange}>
+          <option value="">Seleccionar</option>
+          <option value="Si">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+    </div>
+    <div className="col-md-auto">
+      <div className="d-flex align-items-center">
+        <label htmlFor="responsable" className="fw-bold mb-0 me-2 text-nowrap">Responsable:</label>
+        <input type="text" id="responsable" className="form-control form-control-sm border-0 border-bottom rounded-0 bg-transparent text-center" value={formData.responsable} readOnly />
+      </div>
+    </div>
+    <div className="col-md-3">
+      <div className="d-flex align-items-center">
+        <label htmlFor="fecha" className="fw-bold mb-0 me-2 text-nowrap">Fecha:</label>
+        <input type="text" id="fecha" className="form-control form-control-sm border-1 bg-transparent text-center" value={formData.fecha} readOnly />
+      </div>
+    </div>
+  </div>
+</div>
         <div className="rounded mb-3 p-3">
           <div className="row g-2 align-items-center">
             <div className="col-1 py-1 fw-bold">Proveedor</div>
@@ -892,13 +900,13 @@ function FormatoTrial() {
             <span className="fw-bold d-block mb-1">Centro:</span>
             <div className="d-flex justify-content-start gap-2 pt-1">
               <div className="w-100 border-secondary">
-                <select id="centro" className="form-select form-select-sm border-0 border-bottom rounded-0 text-center w-auto" value={formData.centro} onChange={handleChange}>
-                  <option value="">Seleccionar</option>
+                <input id="centro" className="form-control form-control-sm border-0 border-bottom rounded-0 text-center w-auto" list='centro-lista' value={formData.centro || ""} onChange={handleChange} autoComplete="off"/>
+                  <datalist id='centro-lista'>
                   {centro.map((item) => (
                     <option key={item} value={item}>
                       {item}
                     </option>))}
-                </select>
+                </datalist>
               </div>
             </div>
         </div>
@@ -1247,7 +1255,7 @@ function FormatoTrial() {
         </div>
       )} 
       <div className='d-flex justify-content-center gap-3 mb-3 mt-3 my-3'>
-        <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF}>Descargar PDF</button>
+        <button className="btn btn-dark btn-sm fw-bold px-3" onClick={descargarPDF} disabled={!validaDatosDescarga()}>Descargar PDF</button>
         <button className="btn btn-success btn-sm fw-bold px-3" onClick={guardarDatos}>Guardar</button>
       </div>
     </div>

@@ -37,7 +37,9 @@ class Clienteservice {
   deleteClientes(ClientesId) {
     return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }
-
+  complementoPuertoCD(){
+    return axios.get(Clientes_BASE_REST_API + "/puerto")
+  }
   getAllUsuario() {
     return axios.get(Usuario_BASE_REST_API);
   }
@@ -226,6 +228,11 @@ getNombreFabrica(noSap, sapFabrica) {
 getFormatoRevisados(id){
     return axios.get(documentos_AUDIT + "/revisados/listar/" + id)
 }
+
+getFormatoRevisadosAll(){
+    return axios.get(documentos_AUDIT + "/revisados/listar/")
+}
+
 postFormatoRevisados(registro){
     return axios.post(documentos_AUDIT + "/revisados/guardarrevisado/" , registro)
 }
@@ -321,7 +328,7 @@ get_Planeadores_Planta(){
 }
 
   getnuevapi(nopos){
-    return axios.get(Link_Inicial + "/seguimiento/planta/controlpis/nuevapi/" + nopos);
+    return axios.get(documentos_AUDIT + "/record/seguimiento/planta/controlpis/nuevapi/" + nopos);
   }
 }
 export default new Clienteservice();

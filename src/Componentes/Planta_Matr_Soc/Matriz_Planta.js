@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 function Matriz_Planta() {
   const [registros, setRegistros]=useState([]);
   const [feriados, setFeriados] = useState(new Set());
+  const [tablatemp , settablatemp] = useState([]);
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
   const [loading, setLoading] = useState(false);
 
@@ -48,9 +49,8 @@ function Matriz_Planta() {
       const datosCombinados = basePIs.map((p, index) => {
         const llaveBusqueda = String(p.nopo).trim();
         //const codigoEncontrado= cMap[llaveBusqueda] || '';
-
         const fabricaEncontrada=fMap[llaveBusqueda] || '';
-        const etdEncontrado=etdMap[llaveBusqueda] || '';
+        const etdEncontrado = etdMap[llaveBusqueda] || '';
         return {
           ...p,
           id: p.id,
@@ -71,6 +71,7 @@ function Matriz_Planta() {
           etdpi: p.etdpi
         }; 
       }); 
+      complementar(datosCombinados , Soc_Planta   )
       //console.log(datosCombinados)
       setRegistros(datosCombinados);
     } catch (error) {
@@ -135,19 +136,26 @@ function Matriz_Planta() {
     return newRow;
   }
 
+  const complementar = (datos_matriz , Soc_Planta ) => {
+    const resultado = datos_matriz.map(element => {
+    const found = Soc_Planta.find( elementMatriz => Number(elementMatriz.po_th) === Number(element.nopo) || Number(elementMatriz.po) === Number(element.nopo));
+    return { ...element, ...found};
+  });
+  settablatemp(resultado);
+};
   const columns=[
     {field: "nopo", headerName: "NO. PO", width: 90,editable: false,headerClassName: "gris"},
-    {field: "foliott",headerName: "Folio TT", width: 90, editable: false,headerClassName: "gris"},
+    {field: "po",headerName: "Folio TT", width: 90, editable: false,headerClassName: "gris"},
     {field: "bu", headerName: "Unidad de Negocio", width: 90, editable: false, headerClassName: "gris"},
     {field: "comprador", headerName: "Comprador", width: 90, editable: false, headerClassName: "gris"},  // SALE DE SOC
-    {field: "noproveedor", headerName: "# de Proveedor", width: 90, editable: false,headerClassName: "gris"}, // SALE DE SOC
-    {field: "nombreprov", headerName: "Nombre del proveedor", width: 90, editable: false, headerClassName: "gris"}, // SALE DE SOC
+    {field: "no_de_proveedor", headerName: "# de Proveedor", width: 90, editable: false,headerClassName: "gris"}, // SALE DE SOC
+    {field: "proveedor", headerName: "Nombre del proveedor", width: 90, editable: false, headerClassName: "gris"}, // SALE DE SOC
     {field: "planeador", headerName: "Planeador", width: 150, editable: false, headerClassName: "gris"}, // SALE DE SOC REVISAR-.-.-.-.-.-..-.
 
     {field: "codigo", headerName: "Código", editable: false, headerClassName: "gris"}, // SALE DE SOC 
     {field: "fabrica", headerName: "FAB", editable: false, headerClassName: "gris"}, // SALE DE SOC 
 
-    {field: "tt", headerName: "TT", width: 90, editable: false, headerClassName: "gris"},  // SALE DE SOC
+    {field: "revisado", headerName: "TT", width: 90, editable: false, headerClassName: "gris"},  // SALE DE SOC
     {field: "dm", headerName: "D/M", width: 90, editable: false, headerClassName: "gris"},  // es una condicion
     {field: "etdpo", headerName: "ETD PO", width: 105, editable: false, headerClassName: "gris"}, // SALE DE SOC
     {field: "etdpi", headerName: "ETD PI", width: 90, editable: true, type: "date", headerClassName: "gris", 
@@ -366,8 +374,7 @@ function Matriz_Planta() {
       <Link to={`/record/planta/matriz_planta/Nueva_pi`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
     </GridToolbarContainer>
     )
-  }
-  
+  }  
   return (
     <div>
       {loading ? ( <div style={{padding:'30%'}}> <CircularProgress/><label>Actualizando</label>  </div> ) 
@@ -390,7 +397,8 @@ function Matriz_Planta() {
             "& .MuiDataGrid-columnHeaders": {maxHeight: "168px !important",},
             "& .MuiDataGrid-cell": {borderRight: '1px solid #F2F2F2',  borderBottom: '1px solid #F2F2F2', },
           }}
-          rows={registros} columns={columns}
+          rows={tablatemp} 
+          columns={columns}
           columnGroupingModel={gruposDeColumnas} 
           processRowUpdate={processRowUpdate}
           slots={{
