@@ -327,8 +327,11 @@ get_Planeadores_Planta(){
   return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
 }
 
-  getnuevapi(nopos){
-    return axios.get(documentos_AUDIT + "/record/seguimiento/planta/controlpis/nuevapi/" + nopos);
-  }
+getnuevapi(nopos){
+  return axios.get(documentos_AUDIT + "/record/seguimiento/planta/controlpis/nuevapi/" + nopos);
+}
+postBorrador(filas){
+    return axios.post(Clientes_BASE_REST_API + "/mail/borrador", filas)
+}
 }
 export default new Clienteservice();

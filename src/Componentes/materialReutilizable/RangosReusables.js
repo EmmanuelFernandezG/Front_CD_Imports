@@ -102,6 +102,21 @@ export const Orden_Etd_Cur = ["PO PM/TS",
 "ETD",
 "Moneda"
 ]
+export const piok=[
+  "PI OK",
+"PEDIR PI",
+"TRIAL",
+"URGENTE",
+"DIRECTA",
+"DIRECTA PI OK",
+"DIRECTA PEDIR PI",
+"TRADER",
+"TRADER PI OK",
+"TRADER PEDIR PI",
+"REFACCIONES",
+"REFACCIONES PI OK",
+"REFACCIONES PEDIR PI",
+]
 
 export const Revisados_Unica = [
 "ITEM",

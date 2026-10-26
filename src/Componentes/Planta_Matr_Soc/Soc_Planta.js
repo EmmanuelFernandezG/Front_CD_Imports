@@ -8,6 +8,7 @@ import { registerLocale } from 'react-datepicker';
 import { daDK } from '@mui/material/locale';
 
 function Soc_Planta() {
+    const [Contactos_Planta, setContactos_Planta] = useState([]);
     const [digitoInicial, setdigitoInicial] = useState("");
     const [tablatemp , settablatemp] = useState([]);
     const [listProveedores, setlistProveedores] = useState([]);
@@ -86,11 +87,15 @@ function Soc_Planta() {
         };
       }, []);
   
-const complementar = (dataSoc_planta, data_Buffer) => {
+const complementar = (dataSoc_planta, data_Buffer , data_Contactos) => {
   const resultado = dataSoc_planta.map(element => {
     const found = data_Buffer.find( elementBuffer => Number(elementBuffer.po_th) === Number(element.po) || Number(elementBuffer.po) === Number(element.po));
-    return { ...element};
-  });
+  const anexoCorreos = data_Contactos.find(contacto =>  String(contacto.responsable) === String(element.colocador))
+    console.log("ANEXO")
+  console.log(anexoCorreos)
+    return { ...element};}  
+  );
+
   settablatemp(resultado);
 };
 
@@ -98,15 +103,17 @@ useEffect(() => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resProveedores, resBuffer , resSocplanta, resPlaneadores] = await Promise.all([
+      const [resCont, resProveedores, resBuffer , resSocplanta, resPlaneadores] = await Promise.all([
+        ClientesService.getContactosPlantaAll(),
         ClientesService.getproveedoresall(),
         ClientesService.get_bufferSinTots(),
         ClientesService.get_soc_planta(),
         ClientesService.get_Planeadores_Planta()
       ]);
+      setContactos_Planta(resCont.data);
       setlistProveedores(resProveedores.data);
       setbufferPlanta(resBuffer.data);
-      complementar(resSocplanta.data , resBuffer.data )
+      complementar(resSocplanta.data , resBuffer.data , resCont.data )
       setSocPlanta(resSocplanta.data)
       setPlaneadoresPl(resPlaneadores.data)
     } catch (error) {
@@ -195,7 +202,7 @@ const columns_Soc_planta = [
         { field: 'fabrica', headerName: 'Fabrica',headerClassName: "gris"},
         { field: 'comprador', headerName: 'Comprador',headerClassName: "gris"},
         { field: 'confirmador', headerName: 'Confirmador',headerClassName: "gris"},
-        { field: 'colocador', headerName: 'Colocador',headerClassName: "ama  "},
+        { field: 'colocador', headerName: 'Colocador',headerClassName: "ama"},
         { field: 'no_de_proveedor', headerName: 'No. De Proveedor',headerClassName: "gris"},
         { field: 'proveedor', headerName: 'PROVEEDOR',headerClassName: "gris"},
         { field: 'tipo', headerName: 'Tipo',headerClassName: "gris"},
@@ -276,8 +283,6 @@ const columns_Soc_planta = [
         } else { return ''; }
       }},
         { field: 'observaciones_cd', headerName: 'Observaciones CD',headerClassName:'gris'},
-        { field: 'correos_bu', headerName: 'correos BU'},
-        { field: 'correos_confirmador', headerName: 'CORREOS CONFIRMADOR'},
         { field: 'correos', headerName: 'CORREOS'},
         { field: 'control_interno', headerName: 'Control Interno'},
 ]
@@ -438,7 +443,7 @@ return (
     <div style={{ display: tabla1 === false ? 'none': '', marginTop: '2%' }}>
         <Stack direction='row' spacing={2}>
             <input type="number" id="miInput" placeholder="Digita PO / PO TH" value={digitoInicial} onChange={(e) => { const val = e.target.value; setdigitoInicial(val); if (val.length === 7) { nuevo_modificar_Po(val);}}}  />
-            <button style={{width:'15%'}} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actuaizar Bases Planta</button> 
+            <button style={{width:'15%'}} onClick={()=>{actualizar_Bases()}} className='btn btn-success'>Actualizar Bases Planta</button>
             <h3 style={{color:'gray'}}> Seguimiento OC Planta</h3>
             <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-danger' onClick={()=>{rellenar_fechas()}}>Llenar Fechas</button>
             <button hidden={botonesmasivos.length === 0 ? true : false} className='btn btn-success' id='mostrarmasivo' onClick={(e)=>{visor_Masivas(e)}}>Masivas</button>

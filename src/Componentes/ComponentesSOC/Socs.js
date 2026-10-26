@@ -193,7 +193,6 @@ const contactosall = async () => {
           await ClientesService.postNuevoSOC(registro);
         } else {
             await ClientesService.putNuevoSOC(registro.id, registro);
-            console.log(registro);
             const responseMatriz = await ClientesService.getnuevapo(registro.foliott);
               if (responseMatriz.data && responseMatriz.data.length > 0) {
                 const promesas = responseMatriz.data.map(itemMatriz => {
@@ -228,8 +227,9 @@ const contactosall = async () => {
             };
             await ClientesService.saveLog(logCerrar);
         }
-
-        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, status_reimp: "Abierta", rea: registro.rea || ""
+          
+        const datosLog = {asistentepos: usuarioLocal, nopo: registro.foliott, numero_reimp: statusActual, 
+        status_reimp: (registro.status_de_embarque.includes("C") || registro.status_de_embarque.includes("X")) ? "Cerrada" : "Abierta", rea: registro.rea || ""
           , ubicacion_en_archivo: registro.ubicacion_en_archivo || "", reimp: registro.reimp || "", fecha_recibo_log: fechaYHora};
 
       const exists = logs.some(logitem => logitem.nopo === registro.foliott ||  logitem.nopo === registro.nooc); 
@@ -239,8 +239,7 @@ const contactosall = async () => {
           const total = logs.filter(
             logitem => logitem.nopo === registro.foliott || logitem.nopo === registro.nooc
           );
-          await Promise.all(total.map(item => ClientesService.saveLog({ id: item.id, ...datosLog}))
-);
+         await Promise.all(total.map(item => ClientesService.saveLog({ id: item.id, ...datosLog})));
       }
         alert("Registro "+ registro.foliott+" guardado");
        } catch (error) {
@@ -267,7 +266,13 @@ const agregarfecharecibo = ()=>{
             });
         }else if ( i.target.id  === "primer_item"){
               ClientesService.getFamilia(i.target.value).then((response)=>{
-                  setregistro({ ...registro, ...response.data})      
+                const tempEval = { ...response.data }; 
+                    if ( tempEval.unidad_de_negocio.includes("Volteck")) {
+                      tempEval.unidad_de_negocio = tempEval.unidad_de_negocio.toUpperCase();
+                    }else if ( tempEval.unidad_de_negocio.includes("REFACC")) {
+                        tempEval.unidad_de_negocio = tempEval.unidad_de_negocio.toLowerCase();
+                    }
+                    setregistro({ ...registro, ...tempEval });
               }).catch((error)=>{
                 console.log(error)
               })

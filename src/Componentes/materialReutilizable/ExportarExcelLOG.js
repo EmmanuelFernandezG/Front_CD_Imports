@@ -98,13 +98,13 @@ const parsearFecha = (val) => {
     });
 
     const nombre = rango.inicio
-      ? `reporte_${rango.inicio}_a_${rango.fin}.xlsx`
-      : `reporte_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
+      ? `Archivo_LOG_`+ localStorage.getItem("username") + `_${rango.inicio}_a_${rango.fin}.xlsx`
+      : `Archivo_LOG_`+ localStorage.getItem("username") + `_${hoy.toLocaleDateString().replace(/\//g, "-")}.xlsx`;
     saveAs(new Blob([await wb.xlsx.writeBuffer()]), nombre);
   };
   return (
       <button className="btn btn-success" onClick={exportar}>
-        Exportar Excel
+        Exportar Excel LOG
       </button>
   );
 };

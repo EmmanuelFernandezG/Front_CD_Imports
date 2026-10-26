@@ -202,7 +202,7 @@ function FormatoTrial() {
             const cant = parseFloat(f.cantidad) || 0;
             return {...f,
               precioUnitarioFabrica: precioVal,
-              montoTotalFabrica: (cant * parseFloat(precioVal)).toFixed(4)
+              montoTotalFabrica: (cant * parseFloat(precioVal)).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})
             }
           }
           return f;
@@ -239,7 +239,7 @@ function FormatoTrial() {
             const precioVal = obtenerPrecioAutomatico(valor);
             if(precioVal!==null){
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = precioVal;
-              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = ((parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0) * precioVal).toFixed(4);
+              nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = ((parseFloat(nuevasTablas[tablaIndex].filas[filaIndex].cantidad) || 0) * precioVal).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4});
             } else {
               nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioFabrica'] = '';
               nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
@@ -254,13 +254,15 @@ function FormatoTrial() {
 
     if(campo==='cantidad' || campo==='precioUnitarioFabrica' || campo === 'precioUnitarioMontoTotal'){
       const filaActual = nuevasTablas[tablaIndex].filas[filaIndex];
-      const cant = parseFloat(filaActual.cantidad) || 0;
+
+      const cantidadLimpia = String(filaActual.cantidad || '').replace(/,/g, '').trim(); 
+      const cant = parseFloat(cantidadLimpia) || 0;
       
       const precioFab = parseFloat(filaActual.precioUnitarioFabrica) || 0;
       if (cant === 0 && precioFab === 0) {
         nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = '';
       } else {
-        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toFixed(4);
+        nuevasTablas[tablaIndex].filas[filaIndex]['montoTotalFabrica'] = (cant * precioFab).toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4});
       }
       if (esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) {
         nuevasTablas[tablaIndex].filas[filaIndex]['precioUnitarioMontoTotal'] = Number(mapaPrecios[cod]).toFixed(4);
@@ -280,8 +282,8 @@ function FormatoTrial() {
       const cod = String(f.codigo || '').trim();
       const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
         ? Number(mapaPrecios[cod]).toFixed(4) : (f.precioUnitarioMontoTotal || '');
-      
-      const cantidadNum = parseFloat(f.cantidad) || 0;
+      const cantidadLimpia = String(f.cantidad || '').replace(/,/g, '').trim(); // quita comas
+      const cantidadNum = parseFloat(cantidadLimpia) || 0;
       const priceNum = parseFloat(priceCalc) || 0;
       const montoTotalCalcu = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toFixed(4) : (f.montoTotal || '');
 
@@ -770,10 +772,11 @@ function FormatoTrial() {
                   <option value="ANEXO">ANEXO</option>
                 </select>
               </div>
-              <div style={{ width: '80px' }}>
-                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
-                <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
-              </div>
+              <div>
+                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
+                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
+                </div>
+              
             </div>
           </div>
         </div>
@@ -800,7 +803,7 @@ function FormatoTrial() {
               </div>
               <div className="col-md-3">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Nombre de Fábrica</label>
-                <input type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
+                <textarea type="text" id="nombreFabrica" className="form-control form-control-sm text-center" value={formData.nombreFabrica || ''} onChange={handleChange} readOnly={Boolean(formData.noSap && formData.noSap.startsWith("71"))} />
               </div>
               <div className="col-md-2">
                 <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Razón Social</label>
@@ -823,10 +826,10 @@ function FormatoTrial() {
                     ))}
                   </select>
                 </div>
-                <div style={{ minWidth: '110px' }}>
-                  <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Spec</label>
-                  <textarea id="spec" className="form-control form-control-sm required text-center w-100" value={formData.spec || ''} onChange={handleChange} style={{resize: 'none', height: (formData.spec || '').length > 17 ? '60px' : '31px' }} />
-                </div>
+                <div style={{ width: '80px' }}>
+                <label className="text-muted d-block m-0" style={{ fontSize: '13px' }}>Moneda</label>
+                <input type="text" id="moneda" className="form-control form-control-sm text-center" value={formData.moneda} onChange={handleChange} />
+              </div>
               </div>
             </div>
           </div>
@@ -1041,10 +1044,10 @@ function FormatoTrial() {
                       const cod = String(fila.codigo || '').trim();
                       const priceCalc = esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0
                         ? Number(mapaPrecios[cod]).toFixed(4) : (fila.precioUnitarioMontoTotal || '');
-                      const cantidadNum = parseFloat(fila.cantidad) || 0;
+                      const cantidadLimpia = String(fila.cantidad || '').replace(/,/g, '').trim(); 
+                      const cantidadNum = parseFloat(cantidadLimpia) || 0;
                       const priceNum = parseFloat(priceCalc) || 0;
-                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toFixed(4) : (fila.montoTotal || '');
-
+                      const montoTotalCalculado = ((esParcelmobi && mapaPrecios[cod] !== undefined && Number(mapaPrecios[cod]) > 0) && cantidadNum > 0) ? (cantidadNum * priceNum).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4 }) : (fila.montoTotal || '');
                         return (
                       <tr key={fIdx}>
                         <td className="col-pdf-codigo">
@@ -1095,11 +1098,11 @@ function FormatoTrial() {
                     })}
                     <tr className="fw-bold bg-white">
                       <td colSpan="5" className="text-end border-0 text-uppercase pe-3 pt-2">Monto de la Trial Order:</td>
-                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toFixed(4)}</td>
+                      <td className="border-secondary text-center ps-2 bg-light">${totalMontoFabrica.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
                       {formData.razonSocial==="Parcelmobi" && (
                         <>
                           <td className="border-secondary text-end pe-2 bg-light"></td>
-                          <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toFixed(4)}</td>
+                          <td className="border-secondary text-center ps-2 bg-light">${totalMonto.toLocaleString('en-US',{minimumFractionDigits:4, maximumFractionDigits:4})}</td>
                         </>
                       )}
                     </tr>
