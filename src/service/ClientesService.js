@@ -34,6 +34,10 @@ class Clienteservice {
     return axios.put(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId, Clientes);
   }
 
+  matrizPatch(id , registro){
+     return axios.patch(Clientes_BASE_REST_API + "/matrizcd" + "/" + id, registro)
+  }
+
   deleteClientes(ClientesId) {
     return axios.delete(Clientes_BASE_REST_API + "/matrizcd" + "/" + ClientesId);
   }

@@ -9,11 +9,12 @@ export const ExportarExcelLOG = ({ columns = [], rows = [], fuente = "" }) => {
 const campoFecha =
   fuente === "soc"
     ? "fecha_de_reciboactrlpos"
-    : "fecha_inicio";
+    : "fecha_inicio"  ;
 
 const esCampoFecha = (field = "") =>
   field.toLowerCase().includes("fecha") ||
-  field.toLowerCase().includes("etd_");
+  field.toLowerCase().includes("etd_") ||
+  field.toLowerCase().includes("inicio_proceso_cd");
 
 const parsearFecha = (val) => {
   if (!val) return null;
@@ -104,7 +105,7 @@ const parsearFecha = (val) => {
   };
   return (
       <button className="btn btn-success" onClick={exportar}>
-        Exportar Excel LOG
+        Exportar Excel
       </button>
   );
 };
