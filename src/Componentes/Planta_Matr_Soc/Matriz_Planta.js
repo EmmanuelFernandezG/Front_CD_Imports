@@ -4,6 +4,8 @@ import ClientesService from '../../service/ClientesService';
 import {useEffect, useState, useCallback} from 'react';
 import {Checkbox, CircularProgress} from '@mui/material';
 import { Link } from "react-router-dom";
+import { tradersMatricesP } from '../materialReutilizable/RangosReusables';
+import { ExportarExcelLOG } from '../materialReutilizable/ExportarExcelLOG';
 
 function Matriz_Planta() {
   const [registros, setRegistros]=useState([]);
@@ -11,21 +13,24 @@ function Matriz_Planta() {
   const [tablatemp , settablatemp] = useState([]);
   const opciones = { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" };
   const [loading, setLoading] = useState(false);
-
+  const [contactosPlanta, setContactosPlanta] = useState([]);
+  const [search, setSearch] = useState({filtroUsuario:'ALL', filtroPo:'', filtroPoText: '',filtroPi:'',fechacerradas:false})
+  
   useEffect(() => {
     handleVerControlPIs();
   }, []);
-  
+
   const handleVerControlPIs = async () => {
     setLoading(true);
     try{
-      const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados,resSocPlanta] = await Promise.all([
+      const [resControlPIs, resBufferPlanta, resCodigosPlan,resFeriados,resSocPlanta, resContactosPlanta, resMatricesPlanta] = await Promise.all([
         ClientesService.getControlPIsAll(),
-        //ClientesService.getBufferPlantaAll(),
         ClientesService.get_buffer_planta(),
         ClientesService.getCodigosPlaneadorAll(),
         ClientesService.getFeriadosAll(),
-        ClientesService.get_soc_planta()
+        ClientesService.get_soc_planta(),
+        ClientesService.getContactosPlantaAll(),
+        ClientesService.getMatricesPlantaAll(),
       ]);
       const dataFeriados = resFeriados.data;
       const fechas = (Array.isArray(dataFeriados) ? dataFeriados : [])
@@ -33,30 +38,31 @@ function Matriz_Planta() {
       
       const setFeriadosNuevo = new Set(fechas.filter(Boolean));
       setFeriados(setFeriadosNuevo);
+      setContactosPlanta(resContactosPlanta.data || [])
 
       const pis = resControlPIs.data;
       const bufferP = resBufferPlanta.data;
       const codiPlan= resCodigosPlan.data;
       const Soc_Planta = resSocPlanta.data;
-      //planeador por codigo
+      const contPlanta=resContactosPlanta.data;
+      const matricesPlanta=resMatricesPlanta.data; 
+      
       const pMap=Object.fromEntries((codiPlan || []).map(c=>[String(c.item).trim(), c.nombre_planner]));
+      const buMap = Object.fromEntries((contPlanta || []).map(c => [String(c.responsable || '').trim(), c.bu]));
       const cMap=Object.fromEntries((bufferP || []).map(c=>[String(c.po).trim(), c.codigo]));
-      const fMap=Object.fromEntries((bufferP || []).map(f=>[String(f.po).trim(), f.prov]));
       const etdMap=Object.fromEntries((bufferP || []).map(f=>[String(f.po).trim(), f.etd]));
       const familiaMap=Object.fromEntries((bufferP || []).map(f=>[String(f.po).trim(), f.clave]));
-
+      
       const basePIs = Array.isArray(pis) ? pis : Object.values(pis || {});
       const datosCombinados = basePIs.map((p, index) => {
         const llaveBusqueda = String(p.nopo).trim();
-        //const codigoEncontrado= cMap[llaveBusqueda] || '';
-        const fabricaEncontrada=fMap[llaveBusqueda] || '';
-        const etdEncontrado = etdMap[llaveBusqueda] || '';
         return {
           ...p,
           id: p.id,
           nopo: p.nopo,
+          bu:buMap[String(pMap[String(cMap[llaveBusqueda] || "")] || '').trim()] || '',
           planeador: pMap[String(cMap[llaveBusqueda] || '').trim()] || '',
-          etdpo: (etdEncontrado).split('-').reverse().join('/') || '',
+          etdpo: (etdMap[llaveBusqueda] || '').split('-').reverse().join('/') || '',
           familia: familiaMap[llaveBusqueda] || '',
           razonsocial:p.razonsocial || "MAL",
           incoterm: p.incoterm || "MAL",
@@ -71,43 +77,36 @@ function Matriz_Planta() {
           etdpi: p.etdpi
         }; 
       }); 
-      complementar(datosCombinados , Soc_Planta   )
-      //console.log(datosCombinados)
-      setRegistros(datosCombinados);
+      const datosCompletos = complementar(datosCombinados, Soc_Planta, matricesPlanta)
+      settablatemp(datosCompletos)
+      setRegistros(datosCompletos);
     } catch (error) {
         console.error("Error:", error);
     }finally {
       setLoading(false);
     }
   };
+
   const diasLab=useCallback((Finicio, Ffin) => {
     if (!Finicio) return 0;
-    /* const inicio = new Date(String(Finicio).replace(/-/g, '/'));
-    const fin = Ffin ? new Date(String(Ffin).replace(/-/g, '/')) : new Date(); */
     const fechaBien=(val) => {
       if(!val) return new Date();
       if(val instanceof Date) return new Date(val);
       const valor = String(val).trim();
-      if (valor.includes('-')) {
-        return new Date(valor.replace(/-/g, '/'));
-      }
-      return new Date(valor);
+      return (valor.includes('-'))? new Date(valor) : new Date(valor);
     };
 
     const inicio = fechaBien(Finicio);
     const fin = Ffin ? fechaBien(Ffin) : new Date();
     let diasLaborables=0;
-    //console.log("Inicio:" +inicio)
     while(inicio <= fin){
-      const esFinDeSemana=((inicio.getDay()) === 0 || (inicio.getDay()) === 6);// sabado 6, domingo 0
-      //const esFestivo=feriados.has(inicio.toISOString().split('T')[0]);
+      const esFinDeSemana=((inicio.getDay()) === 0 || (inicio.getDay()) === 6); // sabado 6, domingo 0
       const yyyy=inicio.getFullYear();
       const mm=String(inicio.getMonth() + 1).padStart(2, '0');
       const dd=String(inicio.getDate()).padStart(2, '0');
       const fechal=`${yyyy}-${mm}-${dd}`;
 
       const esFestivo=feriados.has(fechal);
-      //console.log(fechal)
       if (!esFinDeSemana && !esFestivo){
         diasLaborables++;
       }
@@ -117,51 +116,113 @@ function Matriz_Planta() {
   }, [feriados]);
 
   const handleCheckboxChange = async(id, checked, campo) => {
+    const actualizarLista = (prev) =>
+      prev.map((row) => (row.id === id ? { ...row, [campo]: checked ? "OK" : "MAL" } : row));
+
+    setRegistros(actualizarLista);
+    settablatemp(actualizarLista);
     const registroActual = registros.find((row) => row.id === id);
     if (!registroActual) return;
-    
-    const registroModificado= {...registroActual,  [campo]: checked ? "OK" : "MAL"}
-    setRegistros((prev) => prev.map((row) => (row.id === id ? registroModificado : row)));
     try {
-      await ClientesService.saveControlPIs(registroModificado);
+      await ClientesService.saveControlPIs({...registroActual,  [campo]: checked ? "OK" : "MAL"});
     } catch (error) {
       console.error("Error:", error);
       setRegistros((prev) => prev.map((row) => (row.id === id ? registroActual: row)));
+      settablatemp((prev) => prev.map((row) => (row.id === id ? registroActual: row)));
     }
   }
 
-  const processRowUpdate= async (newRow) => {
+  /* const processRowUpdate= async (newRow) => {
     await ClientesService.saveControlPIs(newRow);
     setRegistros((prev) => prev.map((row) => (row.id === newRow.id ? newRow : row)));
     return newRow;
-  }
+  } */
+ const processRowUpdate = async (newRow, oldRow) => {
+    try {
+      const rowModificada = {
+        ...newRow,fechainicial: newRow.fechainicial ? new Date(newRow.fechainicial).toISOString().split('T')[0] : null,
+        fecharegistr: newRow.fecharegistr ? new Date(newRow.fecharegistr).toISOString().split('T')[0] : null,
+        fecharev: newRow.fecharev ? new Date(newRow.fecharev).toISOString().split('T')[0] : null,
+        fechainicialcompras: newRow.fechainicialcompras ? new Date(newRow.fechainicialcompras).toISOString().split('T')[0] : null,
+        fechafinalcompras: newRow.fechafinalcompras ? new Date(newRow.fechafinalcompras).toISOString().split('T')[0] : null,
+        finicialplan: newRow.finicialplan ? new Date(newRow.finicialplan).toISOString().split('T')[0] : null,
+        ffinalplan: newRow.ffinalplan ? new Date(newRow.ffinalplan).toISOString().split('T')[0] : null,
+        enviada: newRow.enviada ? new Date(newRow.enviada).toISOString().split('T')[0] : null,
+      };
+      await ClientesService.saveControlPIs(rowModificada);
+      setRegistros((prev) => prev.map((row) => (row.id === rowModificada.id ? rowModificada : row)));
+      settablatemp((prev) => prev.map((row) => (row.id === rowModificada.id ? rowModificada : row)));
+      return rowModificada;
+    } catch (error) {
+      console.error("Error:", error);
+      return oldRow;
+    }
+  };
 
-  const complementar = (datos_matriz , Soc_Planta ) => {
-    const resultado = datos_matriz.map(element => {
-    const found = Soc_Planta.find( elementMatriz => Number(elementMatriz.po_th) === Number(element.nopo) || Number(elementMatriz.po) === Number(element.nopo));
-    return { ...element, ...found};
+  const complementar = (datos_matriz , Soc_Planta, matricesPlanta) => {
+    const tradersValidos=new Set(tradersMatricesP)
+    const nombresMAtrices=new Map();
+    (matricesPlanta || []).forEach(m => {
+      const nombreFabrica = String(m.nombre || '').trim();
+      if (nombreFabrica) {
+        nombresMAtrices.set(nombreFabrica, {
+        trader: String(m.trader_utilizado || '').trim(),hoja: String(m.hoja || '').trim().toLowerCase()});
+      }
+    });
+
+    const resultado = datos_matriz.map((element, index) => {
+      const llave= String(element.nopo || "")
+      const found = Soc_Planta.find( elementMatriz => {
+        const poTh = String(elementMatriz.po_th || '')
+        const po = String(elementMatriz.po || '')
+        return (poTh !== '' && poTh === llave) || (po !== '' && po === llave);
+      })
+
+      const fabricaSoc = String(found?.fabrica || element.fabrica || '').trim();
+      const traderEncontrado = nombresMAtrices.get(fabricaSoc);
+      const esComponentes=["componentes", "componentes / desarrollo componentes","desarrollo componentes"].includes(String(element.bu || "").toLowerCase());
+
+      let esMatrices=false;
+      if(!traderEncontrado){
+        esMatrices=esComponentes;}else{
+          
+        const esHojaPmRule = traderEncontrado.hoja === "pm rule";
+        esMatrices=(esHojaPmRule && esComponentes) || (esHojaPmRule && !esComponentes);
+      }
+      return { ...found, ...element, id: element.id ?? `row-${index}`,no_de_proveedor: (found?.no_de_proveedor || element.no_de_proveedor || ""), 
+        dm: esMatrices?"MATRICES":"DIRECTO"};
+    });
+    return resultado;
+  };
+
+  const filter = (e) => {
+    if (e.target.id === "filtroPO") {
+      const texto = e.target.value;
+      const rango = texto.split("\n").map(r => parseInt(r.trim())).filter(r => !isNaN(r));
+      setSearch(prev => ({ ...prev, filtroPo: rango, filtroPoText: texto }));
+    }
+  };
+  const filasFiltradas = (tablatemp || []).filter((p) => { 
+    const filtroPo = search.filtroPo.length === 0 || search.filtroPo.includes(Number(p.po_th)) || search.filtroPo.includes(Number(p.po));
+    return filtroPo;
   });
-  settablatemp(resultado);
-};
+
   const columns=[
     {field: "nopo", headerName: "NO. PO", width: 90,editable: false,headerClassName: "gris"},
     {field: "po",headerName: "Folio TT", width: 90, editable: false,headerClassName: "gris"},
     {field: "bu", headerName: "Unidad de Negocio", width: 90, editable: false, headerClassName: "gris"},
-    {field: "comprador", headerName: "Comprador", width: 90, editable: false, headerClassName: "gris"},  // SALE DE SOC
-    {field: "no_de_proveedor", headerName: "# de Proveedor", width: 90, editable: false,headerClassName: "gris"}, // SALE DE SOC
-    {field: "proveedor", headerName: "Nombre del proveedor", width: 90, editable: false, headerClassName: "gris"}, // SALE DE SOC
-    {field: "planeador", headerName: "Planeador", width: 150, editable: false, headerClassName: "gris"}, // SALE DE SOC REVISAR-.-.-.-.-.-..-.
-
-    {field: "codigo", headerName: "Código", editable: false, headerClassName: "gris"}, // SALE DE SOC 
-    {field: "fabrica", headerName: "FAB", editable: false, headerClassName: "gris"}, // SALE DE SOC 
-
-    {field: "revisado", headerName: "TT", width: 90, editable: false, headerClassName: "gris"},  // SALE DE SOC
-    {field: "dm", headerName: "D/M", width: 90, editable: false, headerClassName: "gris"},  // es una condicion
-    {field: "etdpo", headerName: "ETD PO", width: 105, editable: false, headerClassName: "gris"}, // SALE DE SOC
+    {field: "comprador", headerName: "Comprador", width: 90, editable: false, headerClassName: "gris"},  
+    {field: "no_de_proveedor", headerName: "# de Proveedor", width: 90, editable: false,headerClassName: "gris"}, 
+    {field: "proveedor", headerName: "Nombre del proveedor", width: 90, editable: false, headerClassName: "gris"}, 
+    {field: "planeador", headerName: "Planeador", width: 150, editable: false, headerClassName: "gris"}, 
+    {field: "codigo", headerName: "Código", editable: false, headerClassName: "gris"},  
+    {field: "fabrica", headerName: "FAB", editable: false, headerClassName: "gris"},  
+    {field: "revisado", headerName: "TT", width: 90, editable: false, headerClassName: "gris"},  
+    {field: "dm", headerName: "D/M", width: 90, editable: false, headerClassName: "gris"},  
+    {field: "etdpo", headerName: "ETD PO", width: 105, editable: false, headerClassName: "gris"}, 
     {field: "etdpi", headerName: "ETD PI", width: 90, editable: true, type: "date", headerClassName: "gris", 
       valueFormatter: (params) => params ? new Date(params).toLocaleDateString("es-MX", opciones) : "" },
-    {field: "familia", headerName: "Familia", width: 140, editable: false, headerClassName: "gris"}, // SALE DE SOC
-
+    {field: "familia", headerName: "Familia", width: 140, editable: false, headerClassName: "gris"}, 
     {field: "razonsocial", headerName: "Razón Social", width: 70, editable: false, headerClassName: "gris",renderCell: (params) => (
       <Box sx={{ display: 'flex', alignItems: 'center'}}>
         <Checkbox size="small" checked={params.row.razonsocial=== "OK"}
@@ -267,26 +328,6 @@ function Matriz_Planta() {
 
   const gruposDeColumnas = [
     {
-      groupId: 'sin',
-      headerName: '',
-      headerClassName: "blanco",
-      headerAlign: 'center',
-      children: [
-        {field: 'nopo'},
-        {field: 'foliott'},
-        {field: 'bu'},
-        {field: 'comprador'},
-        {field: 'noproveedor'},
-        {field: 'nombreprov'},
-        {field: 'planeador'},
-        {field: 'tt'},
-        {field: 'dm'},
-        {field: 'etdpo'},
-        {field: 'etdpi'},
-        {field: 'familia'}
-      ],
-    },
-    {
       groupId: 'revision',
       headerName: 'REVISIÓN',
       headerClassName: "area",
@@ -300,16 +341,6 @@ function Matriz_Planta() {
         { field: 'precio' },
         { field: 'etd' },
         {field: 'adicelim'}
-      ],
-    },
-    {
-      groupId: 'blanc',
-      headerName: '',
-      headerClassName: "blanco",
-      headerAlign: 'center',
-      children: [
-        { field: 'estatusproblema' },
-        { field: 'comentarios' },
       ],
     },
     {
@@ -355,24 +386,16 @@ function Matriz_Planta() {
         { field: 'enviada' }
       ],
     },
-    {
-      groupId: 'sincolor',
-      headerName: '',
-      headerClassName: "blanco",
-      headerAlign: 'center',
-      children: [
-        { field: 'estatustiempo' },
-        { field: 'diasproceso' },
-        { field: 'diasatraso' }
-      ],
-    },
   ];
 
   function botonesSuperiores() {
     return (
     <GridToolbarContainer>
-      <Link to={`/record/planta/matriz_planta/Nueva_pi`} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
+      <Link to={`/record/planta/matriz_planta/Nueva_pi`} state={{ datos: registros }} style={{backgroundColor:"#3C7D22"}} className="btn btn-success">NUEVA PI</Link>
+      <textarea value={search.filtroPoText} onChange={(e) => filter(e)} style={{marginLeft:'2%', height: '38px', verticalAlign: 'middle'}} placeholder='Filtro PO / PI' id="filtroPO"/>
+      <ExportarExcelLOG columns={columns} rows={filasFiltradas} fuente="SocsLog"></ExportarExcelLOG>
     </GridToolbarContainer>
+    
     )
   }  
   return (
@@ -390,6 +413,7 @@ function Matriz_Planta() {
           <label htmlFor="fecha" className="form-label fw-bold mb-0 me-2 text-nowrap ">Fecha:</label>
           <input type="text" id="fecha" className="form-control border-0 text-start w-50 bg-transparent" value={new Date().toLocaleDateString('es-MX')} readOnly />
             <h2 style={{color:'gray'}}> Matriz Planta</h2>
+          
         </div>
         <DataGrid 
           sx={{"& .MuiDataGrid-columnHeaderTitle": {whiteSpace: "normal", lineHeight: "normal",},
@@ -397,10 +421,15 @@ function Matriz_Planta() {
             "& .MuiDataGrid-columnHeaders": {maxHeight: "168px !important",},
             "& .MuiDataGrid-cell": {borderRight: '1px solid #F2F2F2',  borderBottom: '1px solid #F2F2F2', },
           }}
-          rows={tablatemp} 
+          rows={filasFiltradas} 
           columns={columns}
+          checkboxSelection
           columnGroupingModel={gruposDeColumnas} 
           processRowUpdate={processRowUpdate}
+          /* onRowSelectionModelChange={(seleccion) => {
+            setFilasSeleccionadas(seleccion);
+            validarFilasSeleccionadas(seleccion);
+          }} */
           slots={{
           toolbar: botonesSuperiores,
         }}
@@ -408,4 +437,4 @@ function Matriz_Planta() {
       )}</div>
   )
 }
-export default Matriz_Planta
+export default Matriz_Planta;

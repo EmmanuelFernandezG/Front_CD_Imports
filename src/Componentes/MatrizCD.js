@@ -18,6 +18,7 @@ import { useEffect } from "react";
 import ClientesService from "../service/ClientesService";
 // import "./button.css";
 import { GeneraHistorial } from "../Componentes/materialReutilizable/GenerarHistorial";
+import { CompressOutlined } from "@mui/icons-material";
 function FullFeaturedCrudGrid() {
   const [loading, setLoading] = React.useState(false);
   const [puerto, setpuerto] = React.useState([]);
@@ -94,14 +95,19 @@ const complementar = (matrizdata, puertoData) => {
 
 const listarClientes = async (e) => {
   setLoading(true);
-  try {
-      const [puertoRes, matrizRes] = await Promise.all([
-      ClientesService.complementoPuertoCD().catch((err) => {
-        console.error("Error al cargar puerto:", err);
-        return { data: [] };
-      }),
-      ClientesService.getAllmatrizcd()
-    ]);
+ try {
+  const [puertoRes, matrizRes] = await Promise.all([
+    ClientesService.complementoPuertoCD().catch((err) => {
+      console.error("Error al cargar puerto:", err);
+      return { data: [] };
+    }),
+    localStorage.getItem("username") === "Emmanuel" ? ClientesService.get6meses().catch((err) => { console.error("Error al cargar 6 meses:", err);
+          return { data: [] };
+        }) : ClientesService.getAllmatrizcd().catch((err) => {
+          console.error("Error al cargar matriz CD:", err);
+          return { data: [] };
+        })
+  ]);
 
     const puertoData = puertoRes.data || [];
     const matrizData = matrizRes.data || [];
@@ -974,13 +980,13 @@ renderEditCell: (params) => (
         }
       }
     },
-    // {
-    //   field: "puerto_de_embarque",
-    //   headerName: "Puerto de Embarque",
-    //   width: 100,
-    //   editable: false,
-    //   headerClassName: "gris",
-    // },
+    //  {
+    //    field: "puerto_de_embarque",
+    //    headerName: "Puerto de Embarque",
+    //    width: 100,
+    //    editable: false,
+    //    headerClassName: "gris",
+    //  },
   ];
 
   useEffect(() => {
@@ -1236,14 +1242,18 @@ processRowUpdate={async (updatedRow, originalRow) => {
       updatedRow,
       originalRow
     );
-    setRowModesModel((prev) => ({
-      ...prev,
+    setRowModesModel((prev) => ({ ...prev,
       [updatedRow.id]: { mode: "view" },
     }));
-    return rowActualizada;
+    const finalRow = rowActualizada || updatedRow;
+    setvalores((prevValores) =>
+      prevValores.map((row) => (row.id === finalRow.id ? finalRow : row))
+    );
+    return finalRow;
+
   } catch (error) {
     console.error("Error en DataGrid:", error);
-  throw error; 
+    throw error; 
   }
 }}
         getRowHeight={() => ["daguilarm", "natorreg", "mrgarnicah", "arramirez", "gdlopezl", "Emmanuel"].includes(localStorage.getItem("username")) ? "auto" : ""}
@@ -1253,7 +1263,9 @@ processRowUpdate={async (updatedRow, originalRow) => {
         disableDensitySelector={false}
         onProcessRowUpdateError={handleProcessRowUpdateError}
         sortModel={sortModel}
-        rows={valores}
+        rows={(valores || []).filter((p) => {
+                          const filtrovisible =  p.visibilidad === true;
+                          return filtrovisible})}
         onCellEditStart={(params) => {
           params.field === "unidad_de_negocio" ? setbu(true):setbu(false) ;
         }}

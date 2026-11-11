@@ -487,8 +487,7 @@ const filter = (e) => {
       setSearch(prev => ({...prev, gte_responsable_bu: e.target.value }));
     }
   };
-  {console.log(search)}
-  const correos=async()=>{
+  const correos = async ()=>{
     if(filasSeleccionadas.length===0){
       alert("Seleccionar al menos una fila");
       return;
@@ -544,9 +543,9 @@ const filter = (e) => {
                 </Stack>
               </Stack>
               <Stack direction='column'>
-                  <button className='btn btn-sm btn-primary' onClick={correos}>
-                    Generar Mail
-                  </button>
+              <button className='btn btn-sm btn-primary' onClick={correos}>
+                Generar Mail
+              </button>
               </Stack>
 
                 <div>

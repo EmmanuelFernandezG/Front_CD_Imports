@@ -37,6 +37,17 @@ export const anchos = [
 ];
 
 export const colocador = ["-----","HDH","NNI","HMF","CDO","JBO","NRE","STI","YZH","ZYA","HFU","OTRO"];
+export const tradersMatricesP=[
+  "TRADEPOINT PTE. LTD",
+  "E & W LIMITED",
+  "RETHICAL LTD.",
+  "LEARTBAR PARTNERS PTE. LTD",
+  "WAYBAR TRADING LIMITED",
+  "GLOBALOR LIMITED",
+  "FORESTON TRADING PTE. LTD",
+  "PLOUTOS TRADING LIMITED",
+  "MELENCO AMERICAS, S.A.",
+]
 
 export const ordenador =[ 
   "- - - - - - - - -",

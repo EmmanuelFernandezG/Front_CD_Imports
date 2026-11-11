@@ -19,6 +19,11 @@ class Clienteservice {
   getAllClientes() {
     return axios.get(Clientes_BASE_REST_API + "/matrizcd18");
   }
+
+    get6meses() {
+    return axios.get(Clientes_BASE_REST_API + "/matrizcd6");
+  }
+
   getcombProv(probBu){
     return axios.get(Clientes_BASE_REST_API + "/cambiobu/" + probBu)
   }
@@ -35,7 +40,7 @@ class Clienteservice {
   }
 
   matrizPatch(id , registro){
-     return axios.patch(Clientes_BASE_REST_API + "/matrizcd" + "/" + id, registro)
+     return axios.patch(Clientes_BASE_REST_API + "/matrizcd" + "/" + id , registro)
   }
 
   deleteClientes(ClientesId) {
@@ -220,10 +225,10 @@ new_log(filanueva){
   return axios.post(Clientes_BASE_REST_API + "/new_log" , filanueva)
 }
 getFabricasByProveedor(noSap) {
-  return axios.get(documentos_AUDIT+"/formatos/fabricas/"+noSap);
+  return axios.get(documentos_AUDIT+ "/formatos/fabricas/"+noSap);
 }
 getTpPm(PO) {
-  return axios.get(documentos_AUDIT+"/formatos/tppm/"+ PO);
+  return axios.get(documentos_AUDIT+ "/formatos/tppm/"+ PO);
 }
 getNombreFabrica(noSap, sapFabrica) {
   return axios.get(documentos_AUDIT + "/formatos/fabricas/nombre?noSap=" + noSap + "&sapFabrica=" + sapFabrica);
@@ -246,19 +251,19 @@ getSellosAll(){
 }
 
 getCodigosAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/codigosall")
+  return axios.get(documentos_AUDIT + "/actualizarbases/codigosall")
 }
 
 getPreciosAll(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/preciosall")
+  return axios.get(documentos_AUDIT + "/actualizarbases/preciosall")
+}
+getMatricesPlantaAll(){
+  return axios.get(documentos_AUDIT + "/actualizarbases/matricesplantaall")
 }
 getArancel(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/arencelcero")
+  return axios.get(documentos_AUDIT + "/actualizarbases/arencelcero")
 }
 
-postArancel(){
-  return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
-}
 postArancel(){
   return axios.post(documentos_AUDIT + "/actualizarbases/arancelpost")
 }
@@ -280,11 +285,11 @@ getTrialporFolio(folio) {
   return axios.get(documentos_AUDIT + "/trialorder/buscar/" + folio)
 }
 getRevisados(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/revisadosall")
+  return axios.get(documentos_AUDIT+ "/actualizarbases/revisadosall")
 }
 
 getWksh(){
-  return axios.get(documentos_AUDIT+"/actualizarbases/wkshall")
+  return axios.get(documentos_AUDIT+ "/actualizarbases/wkshall")
 }
   // peticiones planta
   get_bufferSinTots(){
@@ -295,15 +300,15 @@ get_buffer_planta(){
 }
 
 getControlPIsAll(){
-  return axios.get(documentos_AUDIT +"/record/seguimiento/planta/controlpisall")
+  return axios.get(documentos_AUDIT + "/record/seguimiento/planta/controlpisall")
 }
 
 /* getBufferPlantaAll(){
-  return axios.get(documentos_AUDIT +"/actualizarbases/bufferplantaall")
+  return axios.get(documentos_AUDIT + "/actualizarbases/bufferplantaall")
 } */
 
 getCodigosPlaneadorAll(){
-  return axios.get(documentos_AUDIT +"/CodigosPlanPlanta/codigosplaneadorall")
+  return axios.get(documentos_AUDIT + "/CodigosPlanPlanta/codigosplaneadorall")
 }
 
 saveControlPIs(datos){

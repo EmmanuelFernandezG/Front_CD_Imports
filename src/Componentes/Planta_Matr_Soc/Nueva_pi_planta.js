@@ -1,13 +1,43 @@
 import Stack from "@mui/material/Stack";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, useLocation} from "react-router-dom";
 import ClientesService from "../../service/ClientesService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {getBreadcrumbsUtilityClass, Input } from "@mui/material";
 import { BUs } from "../materialReutilizable/RangosReusables";
 import { attachPinnedStyle, gridVirtualizationEnabledSelector } from "@mui/x-data-grid/internals";
 
 function Nueva_pi_planta(){
-    const navigate = useNavigate();
+      const location = useLocation();
+      const registros = location.state?.datos;
+      const [resBufferPlanta, setresBufferPlanta] = useState([]);
+      const [resCodigosPlan, setresCodigosPlan] = useState([]);
+
+     useEffect(() => {
+        basesBuffO();
+      }, []);
+    
+
+   const basesBuffO = async () => {
+    let resBufferPlanta = null;
+    let resCodigosPlan = null;
+    try {
+        const responses = await Promise.all([
+            ClientesService.get_buffer_planta(),
+            ClientesService.getCodigosPlaneadorAll()
+        ]);
+        resBufferPlanta = responses[0];
+        resCodigosPlan = responses[1];
+    } catch (error) {
+        console.error("Error:", error);
+    } finally {
+        if (resBufferPlanta !== null && resCodigosPlan !== null) {
+            setresBufferPlanta(resBufferPlanta);
+            setresCodigosPlan(resCodigosPlan);
+        }
+    }
+}
+
+  const navigate = useNavigate();
     const [nopos,setNopos]=useState("");
     const [view, setView]=useState();
     const [view2, setView2]=useState();
@@ -16,24 +46,32 @@ function Nueva_pi_planta(){
 
     const consultanopo = async () => {
       if (!nopos) return;
-      const resPI = await ClientesService.getnuevapi(nopos);
-
-      if (resPI.data && resPI.data.length > 0) {
-        const datosBase = resPI.data[resPI.data.length - 1];
-        setRegistro(datosBase);
-        setView(true);
-        cargarCruces(datosBase);
-      } else {
-        alert("No existe " + nopos + " en socs");
+      const listaSocs = registros || [];
+      const existeSoc = listaSocs.find(item=>Number(item.po_th)===Number(nopos) || Number(item.po)===Number(nopos))
+      if(!existeSoc){
+        alert("No existe "+nopos+" en socs");
+        return;
       }
+      const resPI = await ClientesService.getnuevapi(nopos);
+      const existeMatriz=resPI.data && resPI.data.length>0;
+      if(existeMatriz){ //en soc y en matriz 
+        const datosBase = resPI.data[resPI.data.length - 1];
+        const objetoBase={
+          ...datosBase, no_de_proveedor:existeSoc.no_de_proveedor, proveedor:existeSoc.proveedor
+        }
+        const datosCompletos = await cargarCruces(objetoBase, nopos);
+        setRegistro(datosCompletos);
+        setView(true);
+      }else{//en soc pero no en matriz 
+        const datosCompletos=await cargarCruces(existeSoc,nopos)
+        setRegistro(datosCompletos);
+        setCorreccionSegunda("Nuevo")
+        setView2(true)
+      }
+
     };
 
-    const cargarCruces= async (datosBase) => {
-      try {
-        const [resBufferPlanta, resCodigosPlan] = await Promise.all([
-          ClientesService.get_buffer_planta(),
-          ClientesService.getCodigosPlaneadorAll()
-        ]);
+    const cargarCruces= (objetoBase, numeroPo) => {
         const bufferP = resBufferPlanta.data || [];
         const codiPlan = resCodigosPlan.data || [];
         const pMap = Object.fromEntries(codiPlan.map(c => [String(c.item).trim(), c.nombre_planner]));
@@ -42,17 +80,14 @@ function Nueva_pi_planta(){
         const etdMap = Object.fromEntries(bufferP.map(f => [String(f.po).trim(), f.etd]));
         const familiaMap = Object.fromEntries(bufferP.map(f => [String(f.po).trim(), f.clave]));
 
-        const llaveBusqueda = String(nopos).trim();
-        setRegistro((prev) => ({
-          ...prev,
-          nombreprov: fMap[llaveBusqueda] || prev.nombreprov || "",
-          etdpo: etdMap[llaveBusqueda] ? etdMap[llaveBusqueda].split('-').reverse().join('/') : (prev.etdpo || ""),
-          planeador: pMap[String(cMap[llaveBusqueda] || "").trim()] || prev.planeador || "",
-          familia: familiaMap[llaveBusqueda] || prev.familia || ""
-        }));
-      } catch (error) {
-        console.error("Error:", error);
-      }
+        const llaveBusqueda = String(numeroPo).trim();
+        return {
+          ...objetoBase,
+          nombreprov: fMap[llaveBusqueda] || objetoBase.nombreprov || objetoBase.proveedor || "",
+          etdpo: etdMap[llaveBusqueda] ? etdMap[llaveBusqueda].split('-').reverse().join('/') : (objetoBase.etdpo || ""),
+          planeador: pMap[String(cMap[llaveBusqueda] || "").trim()] || objetoBase.planeador || "",
+          familia: familiaMap[llaveBusqueda] || objetoBase.familia || ""
+        };
     };
 
     const seg_corr = (x)=>{
@@ -83,14 +118,36 @@ function Nueva_pi_planta(){
       }))
     };
 
-    const guardarDatos = async() => {
-      let datos = {...registro};
-      if(correccionSegunda==="Segunda"){
-        delete datos.id;
+    const guardarDatos = async () => {
+      try {
+        let datos = { ...registro };
+        if (correccionSegunda === "Segunda" || correccionSegunda === "Nuevo") {
+          delete datos.id;
+        }
+        const datosParaGuardar = {
+          ...datos,
+          id: datos.id || null,
+          nopo: Number(nopos),
+          po: datos.po || nopos,
+          razonsocial: datos.razonsocial || "MAL",
+          incoterm: datos.incoterm || "MAL",
+          puerto: datos.puerto || "MAL",
+          terminopago: datos.terminopago || "MAL",
+          cantidad: datos.cantidad || "MAL",
+          precio: datos.precio || "MAL",
+          etd: datos.etd || "MAL",
+          comentarios: datos.comentarios || "",
+          fechainicial: datos.fechainicial || "",
+          adicelim: datos.adicelim || "",
+          etdpi: datos.etdpi || null
+        };
+        await ClientesService.saveControlPIs(datosParaGuardar);
+        alert("Registro guardado!");
+        window.history.back();
+        
+      } catch (error) {
+        console.error("Error:", error);
       }
-      await ClientesService.saveControlPIs(datos);
-
-      alert("Registro guardado");
     };
 
     const cerrar = ()=>{
@@ -99,7 +156,6 @@ function Nueva_pi_planta(){
       setCorreccionSegunda("")
       setRegistro({});
     };
-
     if (view){
       return(
         <div style={{padding:'40px'}}> 
@@ -114,7 +170,7 @@ function Nueva_pi_planta(){
       return(
         <div className="px-8 py-5">
           <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-            <div><h2 className="fw-bold text-dark m-2">{correccionSegunda === "Correccion" ? "CORRECCIÓN" : "SEGUNDA"}</h2></div>
+            <div><h2 className="fw-bold text-dark m-2">{correccionSegunda === "Correccion" ? "CORRECCIÓN" : correccionSegunda==="Segunda"?"SEGUNDA":"NUEVO"}</h2></div>
             <div className="d-flex gap-2">
               <button className="btn btn-success px-4 fw-semibold shadow-sm" onClick={guardarDatos}>Guardar Cambios</button>
               <button className="btn btn-danger px-4 fw-semibold" onClick={() => cerrar()}>Cancelar</button>
@@ -132,7 +188,7 @@ function Nueva_pi_planta(){
                     <label className="form-label fw-bold extra-small text-muted mb-1">FOLIO TT</label>
                     <Input readOnly value={registro.foliott || ""} className="form-control form-control-sm bg-light text-center" />
                   </div>
-                  <div className="col-md-2">
+                  {/* <div className="col-md-2">
                     <label className="form-label fw-bold extra-small text-muted mb-1">BU</label>
                     <select className="form-select form-select-sm text-center">
                       <option></option>
@@ -140,32 +196,32 @@ function Nueva_pi_planta(){
                         <option key={item} value={item}>{item}</option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
                   <div className="col-md-3">
                     <label className="form-label fw-bold extra-small text-muted mb-1">Comprador</label>
                     <Input className="form-control form-control-sm" value={registro.comprador || ""} />
                   </div>
                   <div className="col-md-3">
                     <label className="form-label fw-bold extra-small text-muted mb-1">No. Proveedor</label>
-                    <Input className="form-control form-control-sm" />
+                    <Input className="form-control form-control-sm bg-light" value={registro.no_de_proveedor} readOnly />
                   </div>
 
                   <div className="col-md-4">
                     <label className="form-label fw-bold extra-small text-muted mb-1">Nombre Proveedor</label>
-                    <Input className="form-control form-control-sm" />
+                    <Input className="form-control form-control-sm bg-light" value={registro.proveedor} readOnly/>
                   </div>
                   <div className="col-md-3">
                     <label className="form-label fw-bold extra-small text-muted mb-1">Planeador</label>
                     <Input className="form-control form-control-sm" value={registro.planeador || ""}/>
                   </div>
-                  <div className="col-md-2">
+                  {/* <div className="col-md-2">
                     <label className="form-label fw-bold extra-small text-muted mb-1">TT</label>
-                    <Input className="form-control form-control-sm text-center" />
-                  </div>
-                  <div className="col-md-1">
+                    <Input className="form-control form-control-sm text-center" value={registro.revisado || ""} />
+                  </div>  */}
+                  {/* <div className="col-md-1">
                     <label className="form-label fw-bold extra-small text-muted mb-1">D/M</label>
                     <Input className="form-control form-control-sm text-center" />
-                  </div>
+                  </div> */}
                   <div className="col-md-2">
                     <label className="form-label fw-bold extra-small text-muted mb-1">ETD PO</label>
                     <Input className="form-control form-control-sm text-center" value={registro.etdpo || ""}/>
